@@ -6,12 +6,16 @@ import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 type ImageUploadProps = {
   endpoint?: "productImage";
+  multiple?: boolean;
   onUploadComplete?: (url: string) => void;
+  onUploadsComplete?: (urls: string[]) => void;
 };
 
 export default function ImageUpload({
   endpoint = "productImage",
+  multiple = false,
   onUploadComplete,
+  onUploadsComplete,
 }: ImageUploadProps) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
@@ -35,12 +39,17 @@ export default function ImageUpload({
           },
         }}
         onClientUploadComplete={(res) => {
-          const url = res?.[0]?.ufsUrl;
-          if (url) onUploadComplete?.(url);
+          const urls = (res ?? []).map((file) => file.ufsUrl).filter(Boolean);
+
+          if (urls.length > 0) {
+            onUploadComplete?.(urls[0]);
+            onUploadsComplete?.(urls);
+          }
         }}
         onUploadError={(error: Error) => {
           console.error("UploadThing error:", error.message);
         }}
+        config={{ mode: multiple ? "auto" : "manual" }}
       />
     </div>
   );
