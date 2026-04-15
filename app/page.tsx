@@ -1,32 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Layers, Zap, Paintbrush, Package } from "lucide-react";
 
-const featuredProducts = [
-  {
-    id: 1,
-    title: "Geometric Desk Organizer",
-    price: "$24.99",
-    tag: "Bestseller",
-  },
-  {
-    id: 2,
-    title: "Custom Phone Stand",
-    price: "$14.99",
-    tag: "Customizable",
-  },
-  {
-    id: 3,
-    title: "Articulated Dragon",
-    price: "$39.99",
-    tag: "New",
-  },
-  {
-    id: 4,
-    title: "Miniature Architecture",
-    price: "$54.99",
-    tag: "Premium",
-  },
-];
+import { prisma } from "@/lib/prisma";
+import ProductCard from "@/components/ui/ProductCard";
 
 const features = [
   {
@@ -49,7 +25,14 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const featuredProducts = await prisma.product.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 4,
+  });
+
   return (
     <>
       {/* ── Hero ──────────────────────────────────────────────────────── */}
@@ -141,40 +124,30 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <article
-                key={product.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 transition-all hover:border-cyan-400/30 hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]"
-              >
-                {/* Image placeholder */}
-                <div className="flex aspect-square items-center justify-center bg-zinc-800">
-                  <Layers
-                    size={48}
-                    className="text-zinc-600 transition-colors group-hover:text-cyan-400/40"
-                    strokeWidth={1}
-                  />
-                </div>
-
-                {/* Tag */}
-                <span className="absolute left-3 top-3 rounded-full bg-cyan-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-950">
-                  {product.tag}
-                </span>
-
-                <div className="flex flex-1 flex-col justify-between p-4">
-                  <h3 className="font-medium text-white">{product.title}</h3>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-lg font-bold text-cyan-400">
-                      {product.price}
-                    </span>
-                    <button className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-all hover:border-cyan-400/40 hover:text-white">
-                      Add to cart
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          {featuredProducts.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/60 px-6 py-12 text-center">
+              <h3 className="text-2xl font-semibold text-white">Our collection is coming soon</h3>
+              <p className="mx-auto mt-3 max-w-xl text-zinc-400">
+                We are currently preparing premium product drops. Check back shortly to discover our latest 3D printed creations.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={{
+                    id: product.id,
+                    title: product.title,
+                    description: product.description,
+                    price: Number(product.price),
+                    images: product.images,
+                    createdAt: product.createdAt,
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

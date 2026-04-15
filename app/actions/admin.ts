@@ -160,6 +160,7 @@ export async function createProduct(payload: ProductPayload) {
 
   revalidatePath("/admin/products");
   revalidatePath("/");
+  revalidatePath("/products");
   return {
     ...product,
     price: Number(product.price),
@@ -212,6 +213,7 @@ export async function updateProduct(productId: string, payload: ProductPayload) 
 
   revalidatePath("/admin/products");
   revalidatePath("/");
+  revalidatePath("/products");
   return {
     ...product,
     price: Number(product.price),
@@ -245,6 +247,7 @@ export async function deleteProduct(productId: string) {
 
   revalidatePath("/admin/products");
   revalidatePath("/");
+  revalidatePath("/products");
 }
 
 export async function getProducts(categoryId?: string) {
