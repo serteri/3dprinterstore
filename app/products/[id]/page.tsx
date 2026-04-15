@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { createCheckoutSession } from "@/app/actions/checkout";
 import { prisma } from "@/lib/prisma";
 
 function formatCurrency(value: number) {
@@ -33,6 +34,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   if (!product) {
     notFound();
   }
+
+  const checkoutAction = createCheckoutSession.bind(
+    null,
+    product.id,
+    Number(product.price),
+    product.title,
+  );
 
   return (
     <section className="min-h-screen bg-zinc-950 py-14">
@@ -73,6 +81,22 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Price</p>
               <p className="mt-1 text-2xl font-semibold text-cyan-400">{formatCurrency(Number(product.price))}</p>
+            </div>
+
+            <form action={checkoutAction} className="mt-6">
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/50 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-300 shadow-[0_14px_30px_rgba(0,0,0,0.45)] transition-all hover:border-amber-300/80 hover:text-amber-200"
+              >
+                Buy Now
+              </button>
+            </form>
+
+            <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Shipping Information</h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-300">
+                All orders are packed and dispatched from our Brisbane workshop. Standard shipping generally arrives in 3-6 business days across Australia, while Express shipping typically arrives within 1-2 business days after dispatch.
+              </p>
             </div>
           </div>
         </div>
