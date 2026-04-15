@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
@@ -32,14 +33,23 @@ model User {
   orders Order[]
 }
 
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+
+  products Product[]
+}
+
 model Product {
   id             String   @id @default(cuid())
   title          String
   slug           String   @unique
-  description    String?
+  description    String
   price          Decimal  @db.Decimal(10, 2)
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id])
+  images         String[]
   inventory      Int      @default(0)
-  imageUrl       String?
   isCustomizable Boolean  @default(false)
   createdAt      DateTime @default(now())
 
