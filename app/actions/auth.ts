@@ -11,10 +11,6 @@ export type AdminLoginState = {
   error: string | null;
 };
 
-export const adminLoginInitialState: AdminLoginState = {
-  error: null,
-};
-
 function passwordsMatch(inputPassword: string, expectedPassword: string) {
   const inputBuffer = Buffer.from(inputPassword);
   const expectedBuffer = Buffer.from(expectedPassword);

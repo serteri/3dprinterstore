@@ -3,7 +3,11 @@
 import { Lock, ArrowRight } from "lucide-react";
 import { useActionState } from "react";
 
-import { adminLoginInitialState, loginAdmin } from "@/app/actions/auth";
+import { loginAdmin, type AdminLoginState } from "@/app/actions/auth";
+
+const adminLoginInitialState: AdminLoginState = {
+  error: null,
+};
 
 export default function AdminLoginForm() {
   const [state, formAction, isPending] = useActionState(loginAdmin, adminLoginInitialState);
