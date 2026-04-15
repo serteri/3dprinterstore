@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Plus, Trash2, Pencil, X, Loader2, Boxes, LogOut } from "lucide-react";
 
 import {
@@ -45,6 +45,11 @@ type ProductsDashboardProps = {
   initialProducts: Product[];
 };
 
+type ToastState = {
+  kind: "success" | "error";
+  message: string;
+} | null;
+
 const emptyForm: ProductFormState = {
   title: "",
   description: "",
@@ -75,7 +80,31 @@ export default function ProductsDashboard({
   }));
   const [newCategoryName, setNewCategoryName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
+  const [pendingAction, setPendingAction] = useState<"save" | "delete" | "refresh" | "category" | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const timeout = setTimeout(() => {
+      setToast(null);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [toast]);
+
+  function showToast(kind: "success" | "error", message: string) {
+    setToast({ kind, message });
+  }
+
+  function normalizeCategoryFilter(value?: string | null) {
+    if (!value || value === "all") {
+      return undefined;
+    }
+
+    return value;
+  }
 
   function resetForm() {
     setEditingProductId(null);
@@ -127,14 +156,18 @@ export default function ProductsDashboard({
     }));
   }
 
-  function refreshProducts(categoryId: string) {
+  function refreshProducts(categoryId?: string | null) {
     startTransition(async () => {
+      setPendingAction("refresh");
       try {
-        const nextProducts = await getProducts(categoryId === "all" ? undefined : categoryId);
+        const nextProducts = await getProducts(normalizeCategoryFilter(categoryId));
         setProducts(nextProducts as Product[]);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to refresh products.";
         setErrorMessage(message);
+        showToast("error", message);
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -148,6 +181,7 @@ export default function ProductsDashboard({
     if (!newCategoryName.trim()) return;
 
     startTransition(async () => {
+      setPendingAction("category");
       try {
         const category = await createCategory(newCategoryName);
         const nextCategories = [...categories, category].sort((a, b) => a.name.localeCompare(b.name));
@@ -157,9 +191,13 @@ export default function ProductsDashboard({
           categoryId: category.id,
         }));
         setNewCategoryName("");
+        showToast("success", `Category \"${category.name}\" created.`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to create category.";
         setErrorMessage(message);
+        showToast("error", message);
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -200,19 +238,26 @@ export default function ProductsDashboard({
     };
 
     startTransition(async () => {
+      setPendingAction("save");
       try {
         if (editingProductId) {
           await updateProduct(editingProductId, payload);
+          showToast("success", "Product updated successfully.");
         } else {
           await createProduct(payload);
+          showToast("success", "Product created successfully.");
         }
 
-        const nextProducts = await getProducts(selectedCategoryId === "all" ? undefined : selectedCategoryId);
+        setSelectedCategoryId("all");
+        const nextProducts = await getProducts();
         setProducts(nextProducts as Product[]);
         closeForm();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to save product.";
         setErrorMessage(message);
+        showToast("error", message);
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -222,13 +267,18 @@ export default function ProductsDashboard({
     if (!shouldDelete) return;
 
     startTransition(async () => {
+      setPendingAction("delete");
       try {
         await deleteProduct(productId);
-        const nextProducts = await getProducts(selectedCategoryId === "all" ? undefined : selectedCategoryId);
+        const nextProducts = await getProducts(normalizeCategoryFilter(selectedCategoryId));
         setProducts(nextProducts as Product[]);
+        showToast("success", "Product deleted.");
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to delete product.";
         setErrorMessage(message);
+        showToast("error", message);
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -284,6 +334,19 @@ export default function ProductsDashboard({
 
         {errorMessage ? (
           <div className="rounded-xl border border-red-700/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">{errorMessage}</div>
+        ) : null}
+
+        {isPending ? (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-xs text-zinc-300">
+            <Loader2 size={14} className="animate-spin" />
+            {pendingAction === "save"
+              ? "Saving product..."
+              : pendingAction === "delete"
+                ? "Deleting product..."
+                : pendingAction === "category"
+                  ? "Creating category..."
+                  : "Refreshing products..."}
+          </div>
         ) : null}
 
         <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/80 shadow-[0_20px_48px_rgba(0,0,0,0.35)]">
@@ -357,9 +420,9 @@ export default function ProductsDashboard({
       </div>
 
       {formOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center sm:p-6">
-          <div className="w-full max-w-3xl rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-[0_40px_80px_rgba(0,0,0,0.55)] sm:p-6">
-            <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-6">
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-[0_40px_80px_rgba(0,0,0,0.55)]">
+            <div className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-xl font-semibold text-zinc-100">
                   {editingProductId ? "Edit Product" : "Add New Product"}
@@ -376,7 +439,8 @@ export default function ProductsDashboard({
               </button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="overflow-y-auto px-5 py-4 sm:px-6">
+              <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <label htmlFor="title" className="text-sm font-medium text-zinc-200">Title</label>
                 <input
@@ -430,63 +494,59 @@ export default function ProductsDashboard({
                   ))}
                 </select>
               </div>
-            </div>
+              </div>
 
-            <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <p className="mb-2 text-sm font-medium text-zinc-200">Add New Category</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  value={newCategoryName}
-                  onChange={(event) => setNewCategoryName(event.target.value)}
-                  className="h-10 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors focus:border-[#0EA5B7]"
-                  placeholder="Limited Editions"
-                />
-                <button
-                  type="button"
-                  onClick={handleCreateCategory}
-                  className="h-10 rounded-lg border border-zinc-600 bg-zinc-800 px-4 text-sm font-medium text-zinc-100 transition-colors hover:border-[#2D8B95] hover:bg-zinc-700"
-                >
-                  Add Category
-                </button>
+              <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+                <p className="mb-2 text-sm font-medium text-zinc-200">Add New Category</p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={newCategoryName}
+                    onChange={(event) => setNewCategoryName(event.target.value)}
+                    className="h-10 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors focus:border-[#0EA5B7]"
+                    placeholder="Limited Editions"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={isPending}
+                    className="h-10 rounded-lg border border-zinc-600 bg-zinc-800 px-4 text-sm font-medium text-zinc-100 transition-colors hover:border-[#2D8B95] hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Add Category
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <p className="text-sm font-medium text-zinc-200">Product Images</p>
+                <ImageUpload multiple onUploadsComplete={addUploadedImages} />
+
+                {formState.images.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {formState.images.map((url) => (
+                      <div key={url} className="group relative overflow-hidden rounded-xl border border-zinc-700">
+                        <img src={url} alt="Product upload" className="h-24 w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(url)}
+                          className="absolute right-1.5 top-1.5 rounded-full bg-black/70 p-1 text-zinc-200 opacity-0 transition-opacity group-hover:opacity-100"
+                          aria-label="Remove image"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500">Upload at least one image. The first image will be used as the primary preview.</p>
+                )}
               </div>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <p className="text-sm font-medium text-zinc-200">Product Images</p>
-              <ImageUpload multiple onUploadsComplete={addUploadedImages} />
-
-              {formState.images.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {formState.images.map((url) => (
-                    <div key={url} className="group relative overflow-hidden rounded-xl border border-zinc-700">
-                      <img src={url} alt="Product upload" className="h-24 w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(url)}
-                        className="absolute right-1.5 top-1.5 rounded-full bg-black/70 p-1 text-zinc-200 opacity-0 transition-opacity group-hover:opacity-100"
-                        aria-label="Remove image"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-zinc-500">Upload at least one image. The first image will be used as the primary preview.</p>
-              )}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3 border-t border-zinc-800 pt-4 sm:flex-row sm:items-center sm:justify-end">
-              {isPending ? (
-                <div className="inline-flex items-center gap-2 text-sm text-zinc-400">
-                  <Loader2 size={14} className="animate-spin" />
-                  Processing...
-                </div>
-              ) : null}
-
+            <div className="flex items-center justify-end gap-3 border-t border-zinc-800 bg-zinc-950/95 px-5 py-4 sm:px-6">
               <button
                 type="button"
                 onClick={closeForm}
+                disabled={isPending}
                 className="h-11 rounded-xl border border-zinc-700 px-5 text-sm font-medium text-zinc-200 transition-colors hover:border-zinc-500"
               >
                 Cancel
@@ -494,11 +554,27 @@ export default function ProductsDashboard({
               <button
                 type="button"
                 onClick={handleSubmitProduct}
-                className="h-11 rounded-xl bg-[#0EA5B7] px-5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-[#20BFD2]"
+                disabled={isPending}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0EA5B7] px-5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-[#20BFD2] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {editingProductId ? "Save Changes" : "Create Product"}
+                {isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+                {editingProductId ? "Save Product" : "Save Product"}
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {toast ? (
+        <div className="pointer-events-none fixed right-4 top-4 z-[60]">
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm shadow-[0_16px_32px_rgba(0,0,0,0.35)] ${
+              toast.kind === "success"
+                ? "border-emerald-700/70 bg-emerald-950/90 text-emerald-200"
+                : "border-red-700/70 bg-red-950/90 text-red-200"
+            }`}
+          >
+            {toast.message}
           </div>
         </div>
       ) : null}
