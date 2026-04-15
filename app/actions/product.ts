@@ -2,42 +2,21 @@
 
 import { redirect } from "next/navigation";
 
-import { prisma } from "@/lib/prisma";
-
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
-
-async function createUniqueSlug(title: string) {
-  const baseSlug = slugify(title);
-  let candidate = baseSlug;
-  let suffix = 1;
-
-  while (true) {
-    const exists = await prisma.product.findUnique({
-      where: { slug: candidate },
-      select: { id: true },
-    });
-
-    if (!exists) return candidate;
-
-    suffix += 1;
-    candidate = `${baseSlug}-${suffix}`;
-  }
-}
+import { createProduct as createAdminProduct, getCategories } from "@/app/actions/admin";
 
 export async function createProduct(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
   const priceRaw = String(formData.get("price") ?? "").trim();
-  const imageUrl = String(formData.get("imageUrl") ?? "").trim();
+  const categoryIdRaw = String(formData.get("categoryId") ?? "").trim();
+  const imagesRaw = String(formData.get("images") ?? "").trim();
 
   if (!title) {
     throw new Error("Product title is required.");
+  }
+
+  if (!description) {
+    throw new Error("Product description is required.");
   }
 
   const price = Number(priceRaw);
@@ -45,21 +24,31 @@ export async function createProduct(formData: FormData) {
     throw new Error("Price must be a positive number.");
   }
 
-  if (!imageUrl) {
-    throw new Error("Please upload a product image.");
+  const categories = await getCategories();
+  const fallbackCategoryId = categories[0]?.id;
+  const categoryId = categoryIdRaw || fallbackCategoryId;
+
+  if (!categoryId) {
+    throw new Error("Create at least one category before adding products.");
   }
 
-  const slug = await createUniqueSlug(title);
+  const images = imagesRaw
+    ? imagesRaw
+        .split(",")
+        .map((image) => image.trim())
+        .filter(Boolean)
+    : [];
 
-  await prisma.product.create({
-    data: {
-      title,
-      slug,
-      price: price.toFixed(2),
-      imageUrl,
-      inventory: 0,
-      isCustomizable: false,
-    },
+  if (images.length === 0) {
+    throw new Error("Please upload at least one product image.");
+  }
+
+  await createAdminProduct({
+    title,
+    description,
+    price,
+    categoryId,
+    images,
   });
 
   redirect("/");
