@@ -50,6 +50,7 @@ export async function createStripeCheckoutSession(
       description: true,
       price: true,
       images: true,
+      inventory: true,
     },
   });
 
@@ -61,6 +62,12 @@ export async function createStripeCheckoutSession(
   if (!Number.isFinite(productPrice) || productPrice <= 0) {
     throw new Error("Invalid product price.");
   }
+
+  if (product.inventory <= 0) {
+    throw new Error("This product is currently out of stock.");
+  }
+
+  const finalQuantity = Math.min(quantity, product.inventory);
 
   const baseUrl = getBaseUrl();
 
@@ -88,7 +95,7 @@ export async function createStripeCheckoutSession(
     ],
     line_items: [
       {
-        quantity,
+        quantity: finalQuantity,
         price_data: {
           currency: "aud",
           unit_amount: Math.round(productPrice * 100),
@@ -102,7 +109,7 @@ export async function createStripeCheckoutSession(
     ],
     metadata: {
       productId: product.id,
-      quantity: String(quantity),
+      quantity: String(finalQuantity),
     },
     success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/cancel`,
