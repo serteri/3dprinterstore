@@ -1,14 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { createCheckoutSession } from "@/app/actions/checkout";
+import { createStripeCheckoutSession } from "@/app/actions/stripe";
 import { prisma } from "@/lib/prisma";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "AUD",
   }).format(value);
+}
+
+function formatUsdEstimateFromAud(audValue: number) {
+  const usdEstimate = audValue * 0.65;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(usdEstimate);
 }
 
 type ProductDetailPageProps = {
@@ -35,12 +43,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound();
   }
 
-  const checkoutAction = createCheckoutSession.bind(
-    null,
-    product.id,
-    Number(product.price),
-    product.title,
-  );
+  const checkoutAction = createStripeCheckoutSession.bind(null, product.id);
 
   return (
     <section className="min-h-screen bg-zinc-950 py-14">
@@ -79,16 +82,20 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <p className="mt-4 text-zinc-300">{product.description}</p>
 
             <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Price</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Price (AUD)</p>
               <p className="mt-1 text-2xl font-semibold text-cyan-400">{formatCurrency(Number(product.price))}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Approx. {formatUsdEstimateFromAud(Number(product.price))} USD. Checkout is charged in AUD. Stripe may show localized prices where Adaptive Pricing is available.
+              </p>
             </div>
 
             <form action={checkoutAction} className="mt-6">
+              <input type="hidden" name="quantity" value="1" />
               <button
                 type="submit"
                 className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/50 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-300 shadow-[0_14px_30px_rgba(0,0,0,0.45)] transition-all hover:border-amber-300/80 hover:text-amber-200"
               >
-                Buy Now
+                Buy Now (Pay in AUD)
               </button>
             </form>
 
