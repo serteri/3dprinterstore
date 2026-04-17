@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import AddToCartButton from "@/components/cart/AddToCartButton";
 
-const FREE_SHIPPING_THRESHOLD_AUD = 100;
+const FREE_SHIPPING_THRESHOLD_AUD = 80;
 
 type ProductPurchasePanelProps = {
   product: {

@@ -61,7 +61,7 @@ export async function createCheckoutSession(
 
   const unitAmountCents = Math.round(productPrice * 100);
   const subtotalCents = unitAmountCents;
-  const FREE_SHIPPING_THRESHOLD_CENTS = 10000;
+  const FREE_SHIPPING_THRESHOLD_CENTS = 8000;
   const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
   const shippingOptions = hasFreeShipping
     ? [

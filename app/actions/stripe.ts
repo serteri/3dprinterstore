@@ -64,7 +64,7 @@ export async function createStripeCheckoutSession(
   const finalQuantity = Math.min(quantity, product.inventory);
   const unitAmountCents = Math.round(productPrice * 100);
   const subtotalCents = unitAmountCents * finalQuantity;
-  const FREE_SHIPPING_THRESHOLD_CENTS = 10000;
+  const FREE_SHIPPING_THRESHOLD_CENTS = 8000;
   const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
   const shippingOptions = hasFreeShipping
     ? [

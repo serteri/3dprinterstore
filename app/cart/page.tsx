@@ -11,7 +11,7 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-const FREE_SHIPPING_THRESHOLD_AUD = 100;
+const FREE_SHIPPING_THRESHOLD_AUD = 80;
 
 export default function CartPage() {
   const { items, itemCount, subtotal, removeItem, setQuantity, clearCart } = useCart();

@@ -81,7 +81,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Shipping Information</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-300">
-                FREE Standard Shipping on orders over A$100. Dispatched from Brisbane via Australia Post.
+                FREE Standard Shipping on orders over A$80! Express options available.
               </p>
             </div>
           </div>
