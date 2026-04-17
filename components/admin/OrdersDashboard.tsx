@@ -32,6 +32,17 @@ type OrdersDashboardProps = {
   initialOrders: AdminOrder[];
 };
 
+const CARRIER_OPTIONS = [
+  "Australia Post",
+  "Sendle",
+  "DHL",
+  "Aramex",
+  "Personal Delivery (Brisbane Local)",
+  "Other",
+] as const;
+
+type CarrierOption = (typeof CARRIER_OPTIONS)[number];
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -50,7 +61,8 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
   const [orders, setOrders] = useState(initialOrders);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [carrier, setCarrier] = useState("Australia Post");
+  const [carrier, setCarrier] = useState<CarrierOption>("Australia Post");
+  const [customCarrier, setCustomCarrier] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -63,6 +75,7 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
     setActiveOrderId(orderId);
     setTrackingNumber("");
     setCarrier("Australia Post");
+    setCustomCarrier("");
     setErrorMessage(null);
   }
 
@@ -75,7 +88,7 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
     if (!activeOrder) return;
 
     const normalizedTracking = trackingNumber.trim();
-    const normalizedCarrier = carrier.trim();
+    const normalizedCarrier = (carrier === "Other" ? customCarrier : carrier).trim();
 
     if (!normalizedTracking) {
       setErrorMessage("Tracking number is required.");
@@ -223,19 +236,45 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
             <div className="mt-5 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm text-zinc-200">Carrier</label>
-                <input
+                <select
                   value={carrier}
-                  onChange={(event) => setCarrier(event.target.value)}
+                  onChange={(event) => {
+                    setCarrier(event.target.value as CarrierOption);
+                    setErrorMessage(null);
+                  }}
                   className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-amber-400"
-                  placeholder="Australia Post"
-                />
+                >
+                  {CARRIER_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {carrier === "Other" ? (
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-200">Custom Carrier</label>
+                  <input
+                    value={customCarrier}
+                    onChange={(event) => {
+                      setCustomCarrier(event.target.value);
+                      setErrorMessage(null);
+                    }}
+                    className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-amber-400"
+                    placeholder="Enter carrier name"
+                  />
+                </div>
+              ) : null}
 
               <div className="space-y-2">
                 <label className="text-sm text-zinc-200">Tracking Number</label>
                 <input
                   value={trackingNumber}
-                  onChange={(event) => setTrackingNumber(event.target.value)}
+                  onChange={(event) => {
+                    setTrackingNumber(event.target.value);
+                    setErrorMessage(null);
+                  }}
                   className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-amber-400"
                   placeholder="e.g. 6AUS123456789"
                 />
@@ -259,7 +298,7 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
                 type="button"
                 onClick={handleMarkShipped}
                 disabled={isPending}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-emerald-400 disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#C7A36B] px-4 text-sm font-semibold text-[#101214] transition-colors hover:bg-[#D5B37A] disabled:opacity-60"
               >
                 {isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 Mark as Shipped
