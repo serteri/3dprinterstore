@@ -21,9 +21,14 @@ export async function createStripeCheckoutSession(
     throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY.");
   }
 
-  const shippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID;
-  if (!shippingRateId) {
-    throw new Error("Shipping rate is not configured. Please set NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID.");
+  const standardShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_STANDARD_RATE_ID || process.env.NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID;
+  const expressShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_EXPRESS_RATE_ID;
+  const freeShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_FREE_RATE_ID;
+
+  if (!standardShippingRateId || !expressShippingRateId || !freeShippingRateId) {
+    throw new Error(
+      "Shipping rates are not fully configured. Please set NEXT_PUBLIC_STRIPE_SHIPPING_STANDARD_RATE_ID (or NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID), NEXT_PUBLIC_STRIPE_SHIPPING_EXPRESS_RATE_ID, and NEXT_PUBLIC_STRIPE_SHIPPING_FREE_RATE_ID.",
+    );
   }
 
   const quantityRaw = String(formData.get("quantity") ?? "1").trim();
@@ -57,6 +62,20 @@ export async function createStripeCheckoutSession(
   }
 
   const finalQuantity = Math.min(quantity, product.inventory);
+  const unitAmountCents = Math.round(productPrice * 100);
+  const subtotalCents = unitAmountCents * finalQuantity;
+  const FREE_SHIPPING_THRESHOLD_CENTS = 10000;
+  const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
+  const shippingOptions = hasFreeShipping
+    ? [
+        // Put free shipping first so it is selected by default in Stripe Checkout.
+        { shipping_rate: freeShippingRateId },
+        { shipping_rate: expressShippingRateId },
+      ]
+    : [
+        { shipping_rate: standardShippingRateId },
+        { shipping_rate: expressShippingRateId },
+      ];
 
   const baseUrl = getSiteUrl();
 
@@ -77,17 +96,13 @@ export async function createStripeCheckoutSession(
     phone_number_collection: {
       enabled: true,
     },
-    shipping_options: [
-      {
-        shipping_rate: shippingRateId,
-      },
-    ],
+    shipping_options: shippingOptions,
     line_items: [
       {
         quantity: finalQuantity,
         price_data: {
           currency: "aud",
-          unit_amount: Math.round(productPrice * 100),
+          unit_amount: unitAmountCents,
           product_data: {
             name: product.title,
             description: product.description,

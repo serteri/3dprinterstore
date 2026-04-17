@@ -125,7 +125,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Shipping Information</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-300">
-                All orders are packed and dispatched from our Brisbane workshop. Standard shipping generally arrives in 3-6 business days across Australia, while Express shipping typically arrives within 1-2 business days after dispatch.
+                All orders are packed and dispatched from our Brisbane workshop. For orders under A$100, checkout shows Standard (A$10) and Express (A$15). For orders at A$100 or more, checkout automatically offers Free Shipping (A$0) as the default, plus Express (A$15) if you want faster delivery.
               </p>
             </div>
           </div>

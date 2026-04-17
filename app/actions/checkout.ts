@@ -23,6 +23,16 @@ export async function createCheckoutSession(
     throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY.");
   }
 
+  const standardShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_STANDARD_RATE_ID || process.env.NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID;
+  const expressShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_EXPRESS_RATE_ID;
+  const freeShippingRateId = process.env.NEXT_PUBLIC_STRIPE_SHIPPING_FREE_RATE_ID;
+
+  if (!standardShippingRateId || !expressShippingRateId || !freeShippingRateId) {
+    throw new Error(
+      "Shipping rates are not fully configured. Please set NEXT_PUBLIC_STRIPE_SHIPPING_STANDARD_RATE_ID (or NEXT_PUBLIC_STRIPE_SHIPPING_RATE_ID), NEXT_PUBLIC_STRIPE_SHIPPING_EXPRESS_RATE_ID, and NEXT_PUBLIC_STRIPE_SHIPPING_FREE_RATE_ID.",
+    );
+  }
+
   const stripe = new Stripe(secretKey);
 
   const product = await prisma.product.findUnique({
@@ -49,6 +59,20 @@ export async function createCheckoutSession(
     throw new Error("Product data mismatch. Please refresh and try again.");
   }
 
+  const unitAmountCents = Math.round(productPrice * 100);
+  const subtotalCents = unitAmountCents;
+  const FREE_SHIPPING_THRESHOLD_CENTS = 10000;
+  const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
+  const shippingOptions = hasFreeShipping
+    ? [
+        { shipping_rate: freeShippingRateId },
+        { shipping_rate: expressShippingRateId },
+      ]
+    : [
+        { shipping_rate: standardShippingRateId },
+        { shipping_rate: expressShippingRateId },
+      ];
+
   const baseUrl = getSiteUrl();
 
   const session = await stripe.checkout.sessions.create({
@@ -64,42 +88,13 @@ export async function createCheckoutSession(
     phone_number_collection: {
       enabled: true,
     },
-    shipping_options: [
-      {
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount: 1200,
-            currency: "aud",
-          },
-          display_name: "Standard Shipping",
-          delivery_estimate: {
-            minimum: { unit: "business_day", value: 3 },
-            maximum: { unit: "business_day", value: 6 },
-          },
-        },
-      },
-      {
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount: 2500,
-            currency: "aud",
-          },
-          display_name: "Express Shipping",
-          delivery_estimate: {
-            minimum: { unit: "business_day", value: 1 },
-            maximum: { unit: "business_day", value: 2 },
-          },
-        },
-      },
-    ],
+    shipping_options: shippingOptions,
     line_items: [
       {
         quantity: 1,
         price_data: {
           currency: "aud",
-          unit_amount: Math.round(productPrice * 100),
+          unit_amount: unitAmountCents,
           product_data: {
             name: product.title,
             description: product.description,
