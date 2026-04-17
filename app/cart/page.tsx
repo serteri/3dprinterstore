@@ -67,14 +67,29 @@ export default function CartPage() {
                       <p className="mt-1 text-sm text-zinc-400">{formatCurrency(item.price)} each</p>
 
                       <div className="mt-3 flex items-center gap-3">
-                        <input
-                          type="number"
-                          min="1"
-                          max={item.inventory ?? undefined}
-                          value={item.quantity}
-                          onChange={(event) => setQuantity(item.id, Number(event.target.value))}
-                          className="h-9 w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm text-zinc-100 outline-none focus:border-cyan-400"
-                        />
+                        <div className="inline-flex items-center overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            className="h-9 w-9 text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:text-zinc-600"
+                            aria-label={`Decrease quantity for ${item.title}`}
+                          >
+                            -
+                          </button>
+                          <span className="inline-flex h-9 min-w-10 items-center justify-center border-x border-zinc-700 px-2 text-sm font-semibold text-zinc-100">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.id, item.quantity + 1)}
+                            disabled={item.inventory !== undefined ? item.quantity >= item.inventory : false}
+                            className="h-9 w-9 text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:text-zinc-600"
+                            aria-label={`Increase quantity for ${item.title}`}
+                          >
+                            +
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}

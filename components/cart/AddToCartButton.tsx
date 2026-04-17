@@ -13,9 +13,10 @@ type AddToCartButtonProps = {
     image?: string;
     inventory: number;
   };
+  quantity?: number;
 };
 
-export default function AddToCartButton({ product }: AddToCartButtonProps) {
+export default function AddToCartButton({ product, quantity = 1 }: AddToCartButtonProps) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
@@ -32,7 +33,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
       price: product.price,
       image: product.image,
       inventory: product.inventory,
-      quantity: 1,
+      quantity,
     });
 
     setAdded(true);

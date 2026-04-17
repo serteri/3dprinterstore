@@ -2,38 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createStripeCheckoutSession } from "@/app/actions/stripe";
-import AddToCartButton from "@/components/cart/AddToCartButton";
+import ProductPurchasePanel from "@/components/products/ProductPurchasePanel";
 import { prisma } from "@/lib/prisma";
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "AUD",
-  }).format(value);
-}
-
-function formatUsdEstimateFromAud(audValue: number) {
-  const usdEstimate = audValue * 0.65;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(usdEstimate);
-}
-
-function formatAfterpayInstallment(audValue: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "AUD",
-  }).format(audValue / 4);
-}
 
 type ProductDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
 };
-
-const FREE_SHIPPING_THRESHOLD_AUD = 100;
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = await params;
@@ -54,10 +30,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const checkoutAction = createStripeCheckoutSession.bind(null, product.id);
-  const productPrice = Number(product.price);
-  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_AUD - productPrice);
-  const qualifiesForFreeShipping = remainingForFreeShipping === 0;
-  const isInStock = product.inventory > 0;
 
   return (
     <section className="min-h-screen bg-zinc-950 py-14">
@@ -95,37 +67,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <h1 className="mt-3 text-3xl font-bold text-white">{product.title}</h1>
             <p className="mt-4 text-zinc-300">{product.description}</p>
 
-            <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Price (AUD)</p>
-              <p className="mt-1 text-2xl font-semibold text-cyan-400">{formatCurrency(productPrice)}</p>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-zinc-700/80 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-[10px] font-bold text-zinc-950">a</span>
-                <span>or 4 interest-free payments of {formatAfterpayInstallment(productPrice)} with Afterpay</span>
-              </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                Approx. {formatUsdEstimateFromAud(productPrice)} USD. Checkout is charged in AUD. Stripe may show localized prices where Adaptive Pricing is available.
-              </p>
-              {isInStock ? (
-                <p className="mt-3 rounded-lg border border-amber-700/60 bg-amber-950/25 px-3 py-2 text-sm text-amber-200">
-                  {qualifiesForFreeShipping
-                    ? "Your order qualifies for FREE Standard Shipping!"
-                    : `Add ${formatCurrency(remainingForFreeShipping)} more to get Free Shipping!`}
-                </p>
-              ) : null}
-            </div>
-
-            <form action={checkoutAction} className="mt-6">
-              <input type="hidden" name="quantity" value="1" />
-              <button
-                type="submit"
-                disabled={product.inventory <= 0}
-                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/50 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-300 shadow-[0_14px_30px_rgba(0,0,0,0.45)] transition-all hover:border-amber-300/80 hover:text-amber-200 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:text-zinc-500 disabled:hover:border-zinc-700 disabled:hover:text-zinc-500"
-              >
-                {product.inventory <= 0 ? "Out of Stock" : "Buy Now (Pay in AUD)"}
-              </button>
-            </form>
-
-            <AddToCartButton
+            <ProductPurchasePanel
+              checkoutAction={checkoutAction}
               product={{
                 id: product.id,
                 title: product.title,
