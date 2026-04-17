@@ -26,15 +26,24 @@ export async function loginAdmin(
   _prevState: AdminLoginState,
   formData: FormData,
 ): Promise<AdminLoginState> {
+  const inputEmail = String(formData.get("email") ?? "").trim().toLowerCase();
   const inputPassword = String(formData.get("password") ?? "").trim();
+  const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const expectedPassword = process.env.ADMIN_PASSWORD;
 
-  if (!expectedPassword) {
+  if (!expectedEmail || !expectedPassword) {
     return { error: "Admin authentication is not configured." };
   }
 
-  if (!inputPassword || !passwordsMatch(inputPassword, expectedPassword)) {
-    return { error: "Invalid password. Please try again." };
+  if (!inputEmail || !inputPassword) {
+    return { error: "Email and password are required." };
+  }
+
+  const emailMatches = passwordsMatch(inputEmail, expectedEmail);
+  const passwordMatches = passwordsMatch(inputPassword, expectedPassword);
+
+  if (!emailMatches || !passwordMatches) {
+    return { error: "Invalid credentials. Please try again." };
   }
 
   const token = await createAdminToken();
