@@ -1,12 +1,19 @@
 import Link from "next/link";
 
-import ProductCard from "@/components/ui/ProductCard";
+import ProductsCatalog from "@/components/products/ProductsCatalog";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 60;
 
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({
+    include: {
+      category: {
+        select: {
+          name: true,
+        },
+      },
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -39,21 +46,17 @@ export default async function ProductsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={{
-                  id: product.id,
-                  title: product.title,
-                  description: product.description,
-                  price: Number(product.price),
-                  images: product.images,
-                  createdAt: product.createdAt,
-                }}
-              />
-            ))}
-          </div>
+          <ProductsCatalog
+            products={products.map((product) => ({
+              id: product.id,
+              title: product.title,
+              description: product.description,
+              price: Number(product.price),
+              images: product.images,
+              createdAt: product.createdAt.toISOString(),
+              categoryName: product.category.name,
+            }))}
+          />
         )}
       </div>
     </section>

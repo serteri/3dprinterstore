@@ -5,6 +5,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { isAdminAuthenticated } from "@/lib/admin-session";
@@ -42,6 +43,7 @@ export default async function RootLayout({
             <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           </Suspense>
           <Navbar isAdminAuthenticated={adminAuthenticated} />
+          <PageBreadcrumb />
           <main className="flex-1">{children}</main>
         </CartProvider>
       </body>

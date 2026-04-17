@@ -9,8 +9,8 @@ import { useCart } from "@/components/cart/CartProvider";
 const baseNavLinks = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Products" },
-  { href: "/custom", label: "Custom Order" },
   { href: "/about", label: "About" },
+  { href: "/custom", label: "Custom" },
 ];
 
 type NavbarProps = {
@@ -23,6 +23,7 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
   const navLinks = isAdminAuthenticated
     ? [...baseNavLinks, { href: "/admin/products", label: "Admin" }]
     : baseNavLinks;
+  const mobilePrimaryLinks = baseNavLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/85 backdrop-blur-md">
@@ -72,7 +73,7 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
 
           {/* Mobile menu toggle */}
           <button
-            className="flex items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:text-zinc-100 md:hidden"
+            className="hidden max-md:flex md:hidden items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:text-zinc-100"
             onClick={() => setMenuOpen((prev) => !prev)}
             aria-label="Toggle menu"
           >
@@ -85,19 +86,30 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
       {menuOpen && (
         <nav className="border-t border-zinc-800 bg-zinc-950 md:hidden">
           <ul className="flex flex-col gap-1 px-4 py-3">
-            {navLinks.map((link) => (
+            {mobilePrimaryLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
                   className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-900 hover:text-zinc-100 ${
-                    link.label === "Admin" ? "text-zinc-500" : "text-zinc-300"
+                    "text-zinc-300"
                   }`}
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
+            {isAdminAuthenticated ? (
+              <li>
+                <Link
+                  href="/admin/products"
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-md px-3 py-2 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-300"
+                >
+                  Admin
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </nav>
       )}
