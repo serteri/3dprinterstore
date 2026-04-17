@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ShoppingCart, Menu, X, Layers } from "lucide-react";
 import { useState } from "react";
 
+import { useCart } from "@/components/cart/CartProvider";
+
 const navLinks = [
   { href: "/products", label: "Products" },
   { href: "/custom", label: "Custom Order" },
@@ -12,6 +14,7 @@ const navLinks = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { itemCount } = useCart();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-zinc-950/80 backdrop-blur-md">
@@ -51,7 +54,7 @@ export default function Navbar() {
             <ShoppingCart size={22} strokeWidth={1.5} />
             {/* Cart count badge */}
             <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cyan-400 text-[10px] font-bold text-zinc-950">
-              0
+              {itemCount}
             </span>
           </Link>
 

@@ -5,6 +5,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
+import { CartProvider } from "@/components/cart/CartProvider";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 
 const geistSans = Geist({
@@ -33,11 +34,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-950 text-white">
-        <Suspense>
-          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        </Suspense>
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <CartProvider>
+          <Suspense>
+            <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+          </Suspense>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </CartProvider>
       </body>
     </html>
   );

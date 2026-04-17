@@ -8,6 +8,7 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  updateProductInventory,
   updateProduct,
 } from "@/app/actions/admin";
 import { logoutAdmin } from "@/app/actions/auth";
@@ -23,6 +24,7 @@ type Product = {
   title: string;
   description: string;
   price: number;
+  inventory: number;
   categoryId: string;
   category: {
     id: string;
@@ -36,6 +38,7 @@ type ProductFormState = {
   title: string;
   description: string;
   price: string;
+  inventory: string;
   categoryId: string;
   images: string[];
 };
@@ -54,6 +57,7 @@ const emptyForm: ProductFormState = {
   title: "",
   description: "",
   price: "",
+  inventory: "0",
   categoryId: "",
   images: [],
 };
@@ -82,7 +86,33 @@ export default function ProductsDashboard({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [pendingAction, setPendingAction] = useState<"save" | "delete" | "refresh" | "category" | null>(null);
+  const [inlineInventory, setInlineInventory] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setInlineInventory(
+      Object.fromEntries(initialProducts.map((product) => [product.id, String(product.inventory)])),
+    );
+  }, [initialProducts]);
+
+  useEffect(() => {
+    setInlineInventory((prev) => {
+      const next = { ...prev };
+      for (const product of products) {
+        if (typeof next[product.id] !== "string") {
+          next[product.id] = String(product.inventory);
+        }
+      }
+
+      for (const key of Object.keys(next)) {
+        if (!products.some((product) => product.id === key)) {
+          delete next[key];
+        }
+      }
+
+      return next;
+    });
+  }, [products]);
 
   useEffect(() => {
     if (!toast) return;
@@ -126,6 +156,7 @@ export default function ProductsDashboard({
       title: product.title,
       description: product.description,
       price: String(product.price),
+      inventory: String(product.inventory),
       categoryId: product.categoryId,
       images: product.images,
     });
@@ -219,6 +250,12 @@ export default function ProductsDashboard({
       return;
     }
 
+    const inventory = Number.parseInt(formState.inventory, 10);
+    if (!Number.isInteger(inventory) || inventory < 0) {
+      setErrorMessage("Inventory must be a non-negative whole number.");
+      return;
+    }
+
     if (!formState.categoryId) {
       setErrorMessage("Please choose a category.");
       return;
@@ -233,6 +270,7 @@ export default function ProductsDashboard({
       title: formState.title,
       description: formState.description,
       price,
+      inventory,
       categoryId: formState.categoryId,
       images: formState.images,
     };
@@ -276,6 +314,39 @@ export default function ProductsDashboard({
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to delete product.";
         setErrorMessage(message);
+        showToast("error", message);
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleInlineInventorySave(product: Product) {
+    const value = inlineInventory[product.id] ?? String(product.inventory);
+    const nextInventory = Number.parseInt(value, 10);
+
+    if (!Number.isInteger(nextInventory) || nextInventory < 0) {
+      showToast("error", "Inventory must be a non-negative whole number.");
+      return;
+    }
+
+    startTransition(async () => {
+      setPendingAction("save");
+      try {
+        await updateProductInventory(product.id, nextInventory);
+        setProducts((prev) =>
+          prev.map((item) =>
+            item.id === product.id
+              ? {
+                  ...item,
+                  inventory: nextInventory,
+                }
+              : item,
+          ),
+        );
+        showToast("success", `Inventory updated for ${product.title}.`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to update inventory.";
         showToast("error", message);
       } finally {
         setPendingAction(null);
@@ -357,13 +428,14 @@ export default function ProductsDashboard({
                   <th className="px-4 py-3 font-medium">Product</th>
                   <th className="px-4 py-3 font-medium">Price</th>
                   <th className="px-4 py-3 font-medium">Category</th>
+                  <th className="px-4 py-3 font-medium">Inventory</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center text-zinc-500">
+                    <td colSpan={5} className="px-4 py-12 text-center text-zinc-500">
                       <div className="mx-auto flex w-fit items-center gap-2">
                         <Boxes size={16} />
                         No products found for this filter.
@@ -389,6 +461,29 @@ export default function ProductsDashboard({
                         <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs text-zinc-300">
                           {product.category.name}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={inlineInventory[product.id] ?? String(product.inventory)}
+                            onChange={(event) =>
+                              setInlineInventory((prev) => ({
+                                ...prev,
+                                [product.id]: event.target.value,
+                              }))
+                            }
+                            className="h-9 w-20 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-sm text-zinc-100 outline-none focus:border-[#0EA5B7]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleInlineInventorySave(product)}
+                            className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-200 transition-colors hover:border-[#0EA5B7] hover:text-[#2DD4E4]"
+                          >
+                            Save
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -475,6 +570,20 @@ export default function ProductsDashboard({
                   onChange={(event) => setFormState((prev) => ({ ...prev, price: event.target.value }))}
                   className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors focus:border-[#0EA5B7]"
                   placeholder="159.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="inventory" className="text-sm font-medium text-zinc-200">Inventory</label>
+                <input
+                  id="inventory"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formState.inventory}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, inventory: event.target.value }))}
+                  className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors focus:border-[#0EA5B7]"
+                  placeholder="25"
                 />
               </div>
 

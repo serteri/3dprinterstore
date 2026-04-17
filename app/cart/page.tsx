@@ -1,0 +1,108 @@
+"use client";
+
+import Link from "next/link";
+
+import { useCart } from "@/components/cart/CartProvider";
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "AUD",
+  }).format(value);
+}
+
+export default function CartPage() {
+  const { items, itemCount, subtotal, removeItem, setQuantity, clearCart } = useCart();
+
+  return (
+    <section className="min-h-screen bg-zinc-950 px-4 py-12">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Your Basket</p>
+            <h1 className="mt-1 text-3xl font-semibold text-zinc-100">Shopping Cart</h1>
+            <p className="mt-2 text-sm text-zinc-400">{itemCount} item(s) saved locally in your browser.</p>
+          </div>
+          {items.length > 0 ? (
+            <button
+              type="button"
+              onClick={clearCart}
+              className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-900"
+            >
+              Clear Cart
+            </button>
+          ) : null}
+        </div>
+
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-6 py-12 text-center">
+            <h2 className="text-xl font-medium text-zinc-100">Your cart is empty</h2>
+            <p className="mt-2 text-zinc-400">Add products and they will remain here even if you close the page.</p>
+            <Link
+              href="/products"
+              className="mt-6 inline-flex rounded-full border border-zinc-700 px-5 py-2 text-sm text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-800"
+            >
+              Browse Products
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              {items.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="h-20 w-20 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950">
+                      {item.image ? (
+                        <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-zinc-600">No image</div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-lg font-medium text-zinc-100">{item.title}</h2>
+                      <p className="mt-1 text-sm text-zinc-400">{formatCurrency(item.price)} each</p>
+
+                      <div className="mt-3 flex items-center gap-3">
+                        <input
+                          type="number"
+                          min="1"
+                          max={item.inventory ?? undefined}
+                          value={item.quantity}
+                          onChange={(event) => setQuantity(item.id, Number(event.target.value))}
+                          className="h-9 w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm text-zinc-100 outline-none focus:border-cyan-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.id)}
+                          className="text-sm text-red-300 transition-colors hover:text-red-200"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-100">{formatCurrency(item.price * item.quantity)}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <aside className="h-fit rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+              <h3 className="text-lg font-medium text-zinc-100">Order Summary</h3>
+              <div className="mt-4 flex items-center justify-between text-sm text-zinc-300">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <p className="mt-4 text-xs text-zinc-500">Shipping and taxes are calculated at checkout.</p>
+              <Link
+                href="/products"
+                className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-cyan-500/60 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-300 transition-colors hover:bg-cyan-500/20"
+              >
+                Continue Shopping
+              </Link>
+            </aside>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

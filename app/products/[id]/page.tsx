@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createStripeCheckoutSession } from "@/app/actions/stripe";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 import { prisma } from "@/lib/prisma";
 
 function formatCurrency(value: number) {
@@ -110,6 +111,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 {product.inventory <= 0 ? "Out of Stock" : "Buy Now (Pay in AUD)"}
               </button>
             </form>
+
+            <AddToCartButton
+              product={{
+                id: product.id,
+                title: product.title,
+                price: Number(product.price),
+                image: product.images[0],
+                inventory: product.inventory,
+              }}
+            />
 
             <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Shipping Information</h2>

@@ -8,6 +8,7 @@ export async function createProduct(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const priceRaw = String(formData.get("price") ?? "").trim();
+  const inventoryRaw = String(formData.get("inventory") ?? "0").trim();
   const categoryIdRaw = String(formData.get("categoryId") ?? "").trim();
   const imagesRaw = String(formData.get("images") ?? "").trim();
 
@@ -22,6 +23,11 @@ export async function createProduct(formData: FormData) {
   const price = Number(priceRaw);
   if (Number.isNaN(price) || price <= 0) {
     throw new Error("Price must be a positive number.");
+  }
+
+  const inventory = Number.parseInt(inventoryRaw, 10);
+  if (!Number.isInteger(inventory) || inventory < 0) {
+    throw new Error("Inventory must be a non-negative whole number.");
   }
 
   const categories = await getCategories();
@@ -47,6 +53,7 @@ export async function createProduct(formData: FormData) {
     title,
     description,
     price,
+    inventory,
     categoryId,
     images,
   });

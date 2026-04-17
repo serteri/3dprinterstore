@@ -12,6 +12,7 @@ type ProductPayload = {
   price: number;
   categoryId: string;
   images: string[];
+  inventory: number;
 };
 
 function slugify(input: string) {
@@ -91,6 +92,10 @@ function validateProductPayload(payload: ProductPayload) {
     throw new Error("Price must be a positive number.");
   }
 
+  if (!Number.isInteger(payload.inventory) || payload.inventory < 0) {
+    throw new Error("Inventory must be a non-negative whole number.");
+  }
+
   if (uniqueImages.length === 0) {
     throw new Error("At least one product image is required.");
   }
@@ -101,6 +106,7 @@ function validateProductPayload(payload: ProductPayload) {
     categoryId: payload.categoryId,
     price: Number(payload.price.toFixed(2)),
     images: uniqueImages,
+    inventory: payload.inventory,
   };
 }
 
@@ -145,7 +151,7 @@ export async function createProduct(payload: ProductPayload) {
       price: data.price.toFixed(2),
       categoryId: data.categoryId,
       images: data.images,
-      inventory: 0,
+      inventory: data.inventory,
       isCustomizable: false,
     },
     include: {
@@ -196,6 +202,7 @@ export async function updateProduct(productId: string, payload: ProductPayload) 
       price: data.price.toFixed(2),
       categoryId: data.categoryId,
       images: data.images,
+      inventory: data.inventory,
     },
     include: {
       category: {
@@ -248,6 +255,28 @@ export async function deleteProduct(productId: string) {
   revalidatePath("/admin/products");
   revalidatePath("/");
   revalidatePath("/products");
+}
+
+export async function updateProductInventory(productId: string, inventory: number) {
+  await requireAdminSession();
+
+  if (!productId) {
+    throw new Error("Product id is required.");
+  }
+
+  if (!Number.isInteger(inventory) || inventory < 0) {
+    throw new Error("Inventory must be a non-negative whole number.");
+  }
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { inventory },
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath(`/products/${productId}`);
 }
 
 export async function getProducts(categoryId?: string) {
