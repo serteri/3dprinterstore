@@ -143,7 +143,7 @@ export default function CartPage() {
                 <input type="hidden" name="cartItems" value={cartItemsPayload} />
                 <button
                   type="submit"
-                  className="inline-flex w-full items-center justify-center rounded-xl border border-zinc-600 bg-zinc-950 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-zinc-100 transition-colors hover:border-zinc-400 hover:bg-zinc-900"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-zinc-500 bg-zinc-950 px-4 text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 transition-colors hover:border-zinc-300 hover:bg-zinc-900"
                 >
                   Proceed to Checkout
                 </button>
