@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { Plus, Trash2, Pencil, X, Loader2, Boxes, LogOut } from "lucide-react";
 
 import {
@@ -389,6 +390,13 @@ export default function ProductsDashboard({
                 <Plus size={16} />
                 Add New Product
               </button>
+
+              <Link
+                href="/admin/orders"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-sm font-semibold text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Orders
+              </Link>
 
               <form action={logoutAdmin}>
                 <button

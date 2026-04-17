@@ -1,10 +1,58 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Resend } from "resend";
 import { UTApi } from "uploadthing/server";
 
 import { requireAdminSession } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
+
+type CarrierKey = "australia-post" | "dhl" | "fedex" | "ups" | "usps";
+
+const CARRIER_TRACKING_LINKS: Record<CarrierKey, (trackingNumber: string) => string> = {
+  "australia-post": (trackingNumber) =>
+    `https://auspost.com.au/mypost/track/#/details/${encodeURIComponent(trackingNumber)}`,
+  dhl: (trackingNumber) =>
+    `https://www.dhl.com/global-en/home/tracking.html?tracking-id=${encodeURIComponent(trackingNumber)}`,
+  fedex: (trackingNumber) =>
+    `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(trackingNumber)}`,
+  ups: (trackingNumber) =>
+    `https://www.ups.com/track?tracknum=${encodeURIComponent(trackingNumber)}`,
+  usps: (trackingNumber) =>
+    `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`,
+};
+
+function getTrackingLink(carrier: string, trackingNumber: string) {
+  const normalized = carrier.trim().toLowerCase().replace(/\s+/g, "-");
+  const builder = CARRIER_TRACKING_LINKS[normalized as CarrierKey];
+
+  if (builder) {
+    return builder(trackingNumber);
+  }
+
+  return `https://www.google.com/search?q=${encodeURIComponent(`${carrier} tracking ${trackingNumber}`)}`;
+}
+
+function buildShippedEmailHtml({
+  customerName,
+  trackingNumber,
+  trackingLink,
+}: {
+  customerName: string;
+  trackingNumber: string;
+  trackingLink: string;
+}) {
+  return `
+  <div style="background:#070707;padding:32px 14px;font-family:Segoe UI,Arial,sans-serif;color:#f5f5f5;">
+    <div style="max-width:560px;margin:0 auto;background:#0f0f0f;border:1px solid #222;border-radius:18px;padding:28px;">
+      <p style="margin:0;color:#a3a3a3;font-size:11px;letter-spacing:.24em;text-transform:uppercase;">Pera Dynamics</p>
+      <h1 style="margin:16px 0 10px;font-size:30px;line-height:1.2;font-weight:600;">Your order is on the way</h1>
+      <p style="margin:0 0 18px;color:#d4d4d4;font-size:15px;line-height:1.7;">Hi ${customerName}, your Pera Dynamics order is on the way! Tracking: <strong>${trackingNumber}</strong>.</p>
+      <a href="${trackingLink}" style="display:inline-block;background:#f4f4f5;color:#111;padding:10px 16px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:600;">Track your shipment</a>
+      <p style="margin:20px 0 0;color:#8a8a8a;font-size:12px;line-height:1.7;">If the button does not work, open this link:<br><a href="${trackingLink}" style="color:#bdbdbd;word-break:break-all;">${trackingLink}</a></p>
+    </div>
+  </div>`;
+}
 
 type ProductPayload = {
   title: string;
@@ -302,4 +350,91 @@ export async function getProducts(categoryId?: string) {
     price: Number(product.price),
     createdAt: product.createdAt.toISOString(),
   }));
+}
+
+export async function getOrders() {
+  await requireAdminSession();
+
+  const orders = await prisma.order.findMany({
+    include: {
+      orderItems: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return orders.map((order) => ({
+    ...order,
+    totalAmount: Number(order.totalAmount),
+    createdAt: order.createdAt.toISOString(),
+    orderItems: order.orderItems.map((item) => ({
+      ...item,
+      price: Number(item.price),
+    })),
+  }));
+}
+
+export async function fulfillOrder(orderId: string, trackingNumber: string, carrier: string) {
+  await requireAdminSession();
+
+  if (!orderId) {
+    throw new Error("Order id is required.");
+  }
+
+  const normalizedTracking = trackingNumber.trim();
+  const normalizedCarrier = carrier.trim();
+
+  if (!normalizedTracking) {
+    throw new Error("Tracking number is required.");
+  }
+
+  if (!normalizedCarrier) {
+    throw new Error("Carrier is required.");
+  }
+
+  const order = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      trackingNumber: normalizedTracking,
+      carrier: normalizedCarrier,
+      status: "SHIPPED",
+    },
+    select: {
+      id: true,
+      customerName: true,
+      customerEmail: true,
+    },
+  });
+
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    throw new Error("RESEND_API_KEY is missing.");
+  }
+
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL || "Pera Dynamics <onboarding@resend.dev>";
+  const trackingLink = getTrackingLink(normalizedCarrier, normalizedTracking);
+  const resend = new Resend(resendApiKey);
+
+  await resend.emails.send({
+    from: resendFromEmail,
+    to: order.customerEmail,
+    subject: "Your Pera Dynamics order is on the way",
+    html: buildShippedEmailHtml({
+      customerName: order.customerName,
+      trackingNumber: normalizedTracking,
+      trackingLink,
+    }),
+  });
+
+  revalidatePath("/admin/orders");
 }
