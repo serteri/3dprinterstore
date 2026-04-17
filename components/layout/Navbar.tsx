@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingCart, Menu, X, Layers } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useCart } from "@/components/cart/CartProvider";
 
@@ -26,6 +26,17 @@ type NavbarProps = {
 export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { itemCount } = useCart();
+
+  // Force-close mobile menu whenever the viewport reaches desktop width
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   return (
     <>
@@ -82,9 +93,10 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
               )}
             </Link>
 
-            {/* Hamburger — mobile only (hidden on md+) */}
+            {/* Hamburger — mobile only. Hidden via Tailwind AND !important CSS rule targeting [data-hamburger] */}
             <button
               type="button"
+              data-hamburger
               className="flex items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:text-zinc-100 md:hidden"
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
