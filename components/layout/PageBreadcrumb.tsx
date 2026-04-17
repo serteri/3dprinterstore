@@ -43,6 +43,10 @@ export default function PageBreadcrumb() {
     return null;
   }
 
+  if (pathname === "/about") {
+    return null;
+  }
+
   const segments = pathname.split("/").filter(Boolean);
 
   return (

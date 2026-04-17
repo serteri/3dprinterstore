@@ -21,10 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "Pera Dynamics | Precision 3D Engineered Art",
-    template: "%s | Pera Dynamics",
-  },
+  title: "Pera Dynamics | Precision Art",
   description:
     "Pera Dynamics builds bespoke additive manufacturing products with precision engineering, minimalist craftsmanship, and industrial-grade materials.",
   icons: {
