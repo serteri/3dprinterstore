@@ -57,6 +57,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const productPrice = Number(product.price);
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_AUD - productPrice);
   const qualifiesForFreeShipping = remainingForFreeShipping === 0;
+  const isInStock = product.inventory > 0;
 
   return (
     <section className="min-h-screen bg-zinc-950 py-14">
@@ -104,11 +105,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               <p className="mt-1 text-xs text-zinc-500">
                 Approx. {formatUsdEstimateFromAud(productPrice)} USD. Checkout is charged in AUD. Stripe may show localized prices where Adaptive Pricing is available.
               </p>
-              <p className="mt-3 rounded-lg border border-amber-700/60 bg-amber-950/25 px-3 py-2 text-sm text-amber-200">
-                {qualifiesForFreeShipping
-                  ? "Your order qualifies for FREE Standard Shipping!"
-                  : `Add ${formatCurrency(remainingForFreeShipping)} more to get Free Shipping!`}
-              </p>
+              {isInStock ? (
+                <p className="mt-3 rounded-lg border border-amber-700/60 bg-amber-950/25 px-3 py-2 text-sm text-amber-200">
+                  {qualifiesForFreeShipping
+                    ? "Your order qualifies for FREE Standard Shipping!"
+                    : `Add ${formatCurrency(remainingForFreeShipping)} more to get Free Shipping!`}
+                </p>
+              ) : null}
             </div>
 
             <form action={checkoutAction} className="mt-6">
