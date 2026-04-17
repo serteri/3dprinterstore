@@ -4,18 +4,7 @@ import Stripe from "stripe";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
-
-function getBaseUrl() {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return "http://localhost:3000";
-}
+import { getSiteUrl } from "@/lib/site-url";
 
 const GLOBAL_SHIPPING_COUNTRIES = [
   "AU", "US", "GB", "CA", "NZ",
@@ -69,7 +58,7 @@ export async function createStripeCheckoutSession(
 
   const finalQuantity = Math.min(quantity, product.inventory);
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSiteUrl();
 
   const params = {
     mode: "payment",

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Stripe from "stripe";
 
 import SuccessConfetti from "@/app/success/SuccessConfetti";
+import { getSiteUrl } from "@/lib/site-url";
 
 type SuccessPageProps = {
   searchParams: Promise<{
@@ -13,6 +14,7 @@ type SuccessPageProps = {
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   const { session_id: sessionId } = await searchParams;
   const secretKey = process.env.STRIPE_SECRET_KEY;
+  const siteUrl = getSiteUrl();
 
   if (!sessionId || !secretKey) {
     redirect("/cancel");
@@ -38,7 +40,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 
         <div className="mt-10">
           <Link
-            href="/products"
+            href={`${siteUrl}/products`}
             className="inline-flex items-center justify-center rounded-full border border-zinc-500 bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-zinc-100 transition-colors hover:border-zinc-300 hover:bg-zinc-800"
           >
             Continue Shopping

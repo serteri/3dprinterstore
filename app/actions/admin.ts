@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Resend } from "resend";
+import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { UTApi } from "uploadthing/server";
 
 import { requireAdminSession } from "@/lib/admin-session";
@@ -416,25 +416,36 @@ export async function fulfillOrder(orderId: string, trackingNumber: string, carr
     },
   });
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    throw new Error("RESEND_API_KEY is missing.");
+  const mailerSendApiKey = process.env.MAILSENDER_API_KEY;
+  if (!mailerSendApiKey) {
+    throw new Error("MAILSENDER_API_KEY is missing.");
   }
 
-  const resendFromEmail = process.env.RESEND_FROM_EMAIL || "Pera Dynamics <onboarding@resend.dev>";
+  const senderEmail = process.env.MAILSENDER_FROM_EMAIL || "onboarding@mailer.peradynamics.com";
+  const senderName = process.env.MAILSENDER_FROM_NAME || "Pera Dynamics";
   const trackingLink = getTrackingLink(normalizedCarrier, normalizedTracking);
-  const resend = new Resend(resendApiKey);
 
-  await resend.emails.send({
-    from: resendFromEmail,
-    to: order.customerEmail,
-    subject: "Your Pera Dynamics order is on the way",
-    html: buildShippedEmailHtml({
-      customerName: order.customerName,
-      trackingNumber: normalizedTracking,
-      trackingLink,
-    }),
+  const mailerSend = new MailerSend({
+    apiKey: mailerSendApiKey,
   });
+
+  const sentFrom = new Sender(senderEmail, senderName);
+  const recipients = [new Recipient(order.customerEmail, order.customerName)];
+
+  const emailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipients)
+    .setSubject("Your Pera Dynamics order is on the way")
+    .setHtml(
+      buildShippedEmailHtml({
+        customerName: order.customerName,
+        trackingNumber: normalizedTracking,
+        trackingLink,
+      }),
+    )
+    .setText(`Hi ${order.customerName}, your Pera Dynamics order is on the way! Tracking: ${normalizedTracking}. Track here: ${trackingLink}`);
+
+  await mailerSend.email.send(emailParams);
 
   revalidatePath("/admin/orders");
 }

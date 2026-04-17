@@ -4,24 +4,19 @@ import Stripe from "stripe";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import { getSiteUrl } from "@/lib/site-url";
 
-function getBaseUrl() {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return "http://localhost:3000";
-}
+const GLOBAL_SHIPPING_COUNTRIES = [
+  "AU", "NZ", "US", "CA", "GB", "IE", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "AT", "SE",
+  "NO", "DK", "FI", "PT", "PL", "CZ", "HU", "RO", "BG", "HR", "GR", "CY", "MT", "EE", "LV",
+  "LT", "SK", "SI", "LU", "AE", "SA", "QA", "KW", "BH", "SG", "MY", "JP", "KR", "HK", "TW",
+  "TH", "PH", "ID", "VN", "IN", "ZA", "BR", "MX", "CL", "AR", "CO", "PE",
+] as const;
 
 export async function createCheckoutSession(
   productId: string,
   clientPrice: number,
   clientTitle: string,
-  _formData: FormData,
 ) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
@@ -54,14 +49,17 @@ export async function createCheckoutSession(
     throw new Error("Product data mismatch. Please refresh and try again.");
   }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getSiteUrl();
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_creation: "always",
+    automatic_tax: {
+      enabled: true,
+    },
     billing_address_collection: "required",
     shipping_address_collection: {
-      allowed_countries: ["AU"],
+      allowed_countries: [...GLOBAL_SHIPPING_COUNTRIES],
     },
     phone_number_collection: {
       enabled: true,
