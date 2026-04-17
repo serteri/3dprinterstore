@@ -8,7 +8,7 @@ type SendTransactionalEmailInput = {
   subject: string;
   html: string;
   text: string;
-  tag: "order-success" | "order-shipped";
+  tag: "order-success" | "order-shipped" | "custom-inquiry";
 };
 
 type SendTransactionalEmailOptions = {
