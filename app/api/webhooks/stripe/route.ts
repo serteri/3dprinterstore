@@ -6,6 +6,27 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+type CheckoutOrderLine = {
+  productId: string;
+  quantity: number;
+};
+
+function parseCartItemsMetadata(raw: string): CheckoutOrderLine[] {
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [productId, quantityRaw] = entry.split(":");
+      const quantity = Math.max(1, Number.parseInt(quantityRaw ?? "1", 10) || 1);
+      return {
+        productId: (productId ?? "").trim(),
+        quantity,
+      };
+    })
+    .filter((line) => Boolean(line.productId));
+}
+
 function buildOrderSuccessEmailHtml({
   customerName,
   totalAmount,
@@ -36,6 +57,13 @@ async function handleCheckoutCompleted(event: Stripe.CheckoutSessionCompletedEve
   const productId = session.metadata?.productId;
   const quantityRaw = session.metadata?.quantity ?? "1";
   const quantity = Math.max(1, Number.parseInt(quantityRaw, 10) || 1);
+  const cartItemsRaw = session.metadata?.cartItems?.trim();
+  const cartLines = cartItemsRaw ? parseCartItemsMetadata(cartItemsRaw) : [];
+  const orderLines: CheckoutOrderLine[] = cartLines.length > 0
+    ? cartLines
+    : productId
+      ? [{ productId, quantity }]
+      : [];
   const customerName = session.customer_details?.name?.trim() || "Customer";
   const customerEmail = session.customer_details?.email?.trim() || "no-email@unknown.local";
 
@@ -55,7 +83,7 @@ async function handleCheckoutCompleted(event: Stripe.CheckoutSessionCompletedEve
 
   const totalAmount = Number(((session.amount_total ?? 0) / 100).toFixed(2));
 
-  if (!productId) {
+  if (orderLines.length === 0) {
     return;
   }
 
@@ -69,27 +97,38 @@ async function handleCheckoutCompleted(event: Stripe.CheckoutSessionCompletedEve
       return null;
     }
 
-    const product = await tx.product.findUnique({
-      where: { id: productId },
+    const productIds = Array.from(new Set(orderLines.map((line) => line.productId)));
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds } },
       select: { id: true, price: true, inventory: true },
     });
+    const productMap = new Map(products.map((product) => [product.id, product]));
 
-    if (!product) {
+    if (products.length !== productIds.length) {
       return null;
     }
 
-    if (product.inventory < quantity) {
-      return null;
+    for (const line of orderLines) {
+      const product = productMap.get(line.productId);
+      if (!product) {
+        return null;
+      }
+
+      if (product.inventory < line.quantity) {
+        return null;
+      }
     }
 
-    await tx.product.update({
-      where: { id: productId },
-      data: {
-        inventory: {
-          decrement: quantity,
+    for (const line of orderLines) {
+      await tx.product.update({
+        where: { id: line.productId },
+        data: {
+          inventory: {
+            decrement: line.quantity,
+          },
         },
-      },
-    });
+      });
+    }
 
     await tx.order.create({
       data: {
@@ -100,13 +139,14 @@ async function handleCheckoutCompleted(event: Stripe.CheckoutSessionCompletedEve
         totalAmount: totalAmount.toFixed(2),
         status: "PENDING",
         orderItems: {
-          create: [
-            {
-              productId,
-              quantity,
+          create: orderLines.map((line) => {
+            const product = productMap.get(line.productId)!;
+            return {
+              productId: line.productId,
+              quantity: line.quantity,
               price: Number(product.price).toFixed(2),
-            },
-          ],
+            };
+          }),
         },
       },
     });

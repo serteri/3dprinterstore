@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { createCartStripeCheckoutSession } from "@/app/actions/stripe";
 import { useCart } from "@/components/cart/CartProvider";
 
 function formatCurrency(value: number) {
@@ -12,11 +13,24 @@ function formatCurrency(value: number) {
 }
 
 const FREE_SHIPPING_THRESHOLD_AUD = 80;
+const STANDARD_SHIPPING_AUD = 10;
+
+function serializeCartItems(items: Array<{ id: string; quantity: number }>) {
+  return JSON.stringify(
+    items.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+    })),
+  );
+}
 
 export default function CartPage() {
   const { items, itemCount, subtotal, removeItem, setQuantity, clearCart } = useCart();
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_AUD - subtotal);
   const qualifiesForFreeShipping = remainingForFreeShipping === 0;
+  const shippingCost = qualifiesForFreeShipping ? 0 : STANDARD_SHIPPING_AUD;
+  const totalAmount = subtotal + shippingCost;
+  const cartItemsPayload = serializeCartItems(items);
 
   return (
     <section className="min-h-screen bg-zinc-950 px-4 py-12">
@@ -111,12 +125,31 @@ export default function CartPage() {
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+              <div className="mt-2 flex items-center justify-between text-sm text-zinc-300">
+                <span>Shipping</span>
+                <span>{qualifiesForFreeShipping ? "FREE" : "Standard - A$10"}</span>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-zinc-800 pt-3 text-sm font-semibold text-zinc-100">
+                <span>Total Amount</span>
+                <span>{formatCurrency(totalAmount)}</span>
+              </div>
               <p className="mt-3 rounded-lg border border-amber-700/60 bg-amber-950/25 px-3 py-2 text-sm text-amber-200">
                 {qualifiesForFreeShipping
                   ? "Your order qualifies for FREE Standard Shipping!"
                   : `Add ${formatCurrency(remainingForFreeShipping)} more to get Free Shipping!`}
               </p>
-              <p className="mt-4 text-xs text-zinc-500">Shipping and taxes are calculated at checkout.</p>
+
+              <form action={createCartStripeCheckoutSession} className="mt-4">
+                <input type="hidden" name="cartItems" value={cartItemsPayload} />
+                <button
+                  type="submit"
+                  className="inline-flex w-full items-center justify-center rounded-xl border border-zinc-600 bg-zinc-950 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-zinc-100 transition-colors hover:border-zinc-400 hover:bg-zinc-900"
+                >
+                  Proceed to Checkout
+                </button>
+              </form>
+
+              <p className="mt-4 text-xs text-zinc-500">Taxes are calculated at checkout.</p>
               <Link
                 href="/products"
                 className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-cyan-500/60 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-300 transition-colors hover:bg-cyan-500/20"
