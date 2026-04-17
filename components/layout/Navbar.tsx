@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingCart, Menu, X, Layers } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useCart } from "@/components/cart/CartProvider";
 
@@ -25,7 +25,22 @@ type NavbarProps = {
 
 export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { itemCount } = useCart();
+
+  // Track viewport width on the client — hamburger is only rendered when truly mobile.
+  // This bypasses any CSS specificity issues with Tailwind responsive utilities.
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Close overlay if user resizes to desktop
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
 
   return (
     <>
@@ -44,31 +59,33 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
             </span>
           </Link>
 
-          {/* ── Desktop Navigation — center/right, hidden on mobile ── */}
-          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-100"
-              >
-                {link.label}
-              </Link>
-            ))}
-            {isAdminAuthenticated && (
-              <Link
-                href="/admin/products"
-                className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-400"
-              >
-                Admin
-              </Link>
-            )}
-          </nav>
+          {/* ── Desktop Navigation — only rendered when NOT mobile ── */}
+          {!isMobile && (
+            <nav className="flex items-center gap-8" aria-label="Main navigation">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-100"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {isAdminAuthenticated && (
+                <Link
+                  href="/admin/products"
+                  className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-400"
+                >
+                  Admin
+                </Link>
+              )}
+            </nav>
+          )}
 
-          {/* ── Right: Cart + Mobile Hamburger ── */}
+          {/* ── Right: Cart + Hamburger (hamburger only rendered on mobile) ── */}
           <div className="flex items-center gap-2">
 
-            {/* Cart — always visible, badge only when non-empty */}
+            {/* Cart — always visible */}
             <Link
               href="/cart"
               className="relative flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:text-zinc-100"
@@ -82,16 +99,18 @@ export default function Navbar({ isAdminAuthenticated = false }: NavbarProps) {
               )}
             </Link>
 
-            {/* Hamburger — mobile only, not shown on md and above */}
-            <button
-              type="button"
-              className="flex md:hidden items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:text-zinc-100"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              aria-expanded={menuOpen}
-            >
-              <Menu size={22} strokeWidth={1.5} />
-            </button>
+            {/* Hamburger — JavaScript-controlled: only in DOM on mobile, never on desktop */}
+            {isMobile && (
+              <button
+                type="button"
+                className="flex items-center justify-center rounded-md p-2 text-zinc-400 transition-colors hover:text-zinc-100"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={menuOpen}
+              >
+                <Menu size={22} strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </div>
       </header>
