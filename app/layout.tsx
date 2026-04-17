@@ -7,6 +7,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import { isAdminAuthenticated } from "@/lib/admin-session";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +24,13 @@ export const metadata: Metadata = {
   description: "Order bespoke, high-quality 3D printed products crafted to your exact specifications.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const adminAuthenticated = await isAdminAuthenticated();
+
   return (
     <html
       lang="en"
@@ -38,7 +41,7 @@ export default function RootLayout({
           <Suspense>
             <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           </Suspense>
-          <Navbar />
+          <Navbar isAdminAuthenticated={adminAuthenticated} />
           <main className="flex-1">{children}</main>
         </CartProvider>
       </body>
