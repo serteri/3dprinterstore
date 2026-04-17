@@ -12,13 +12,19 @@ export default function AboutPage() {
   return (
     <section className={`${sora.className} relative isolate overflow-hidden bg-[#0f172a] px-4 py-14 sm:px-6 lg:px-8`}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#3b82f6]/30 blur-[110px]" />
-        <div className="absolute -right-20 top-20 h-72 w-72 rounded-full bg-[#f97316]/25 blur-[110px]" />
-        <div className="absolute bottom-[-80px] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[#8b5cf6]/20 blur-[120px]" />
+        <div className="pd-glow-pulse absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#3b82f6]/30 blur-[110px]" />
+        <div
+          className="pd-glow-pulse absolute -right-20 top-20 h-72 w-72 rounded-full bg-[#f97316]/25 blur-[110px]"
+          style={{ animationDelay: "-2.4s" }}
+        />
+        <div
+          className="pd-glow-pulse absolute bottom-[-80px] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[#8b5cf6]/20 blur-[120px]"
+          style={{ animationDelay: "-4.8s" }}
+        />
       </div>
 
       <div className="relative mx-auto max-w-6xl">
-        <div className="mb-8 flex justify-start">
+        <div className="pd-reveal mb-8 flex justify-start" style={{ animationDelay: "80ms" }}>
           <Link
             href="/"
             className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-5 py-2 text-sm font-medium text-zinc-100 backdrop-blur-lg transition-colors hover:border-white/40 hover:bg-white/10"
@@ -27,14 +33,22 @@ export default function AboutPage() {
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-white/15 bg-white/10 p-8 shadow-[0_30px_100px_rgba(15,23,42,0.45)] backdrop-blur-2xl sm:p-12">
-          <p className="text-xs uppercase tracking-[0.28em] text-blue-200/80">About Pera Dynamics</p>
+        <div
+          className="pd-reveal rounded-3xl border border-white/15 bg-white/10 p-8 shadow-[0_30px_100px_rgba(15,23,42,0.45)] backdrop-blur-2xl sm:p-12"
+          style={{ animationDelay: "150ms" }}
+        >
+          <p className="pd-reveal text-xs uppercase tracking-[0.28em] text-blue-200/80" style={{ animationDelay: "220ms" }}>
+            About Pera Dynamics
+          </p>
           <h1 className="mt-4 max-w-5xl bg-gradient-to-r from-cyan-200 via-blue-300 to-orange-300 bg-clip-text text-4xl font-semibold leading-tight text-transparent sm:text-6xl">
             Where Engineering Meets Vibrant Art.
           </h1>
 
           <div className="mt-10 grid gap-8 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/15 bg-slate-900/35 p-6 backdrop-blur-xl">
+            <div
+              className="pd-reveal rounded-2xl border border-white/15 bg-slate-900/35 p-6 backdrop-blur-xl"
+              style={{ animationDelay: "300ms" }}
+            >
               <h2 className="text-sm uppercase tracking-[0.22em] text-blue-200">The Story</h2>
               <div className="mt-4 space-y-4 text-slate-100/90">
                 <p>
@@ -53,7 +67,10 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl">
+            <div
+              className="pd-reveal rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl"
+              style={{ animationDelay: "420ms" }}
+            >
               <div className="relative h-full min-h-72 overflow-hidden rounded-xl border border-cyan-300/30 shadow-[0_0_0_1px_rgba(147,197,253,0.15),0_0_35px_rgba(59,130,246,0.25)]">
                 <Image
                   src="https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?auto=format&fit=crop&w=1400&q=80"
@@ -66,7 +83,10 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="mt-10 rounded-2xl border border-white/15 bg-slate-900/35 p-6 backdrop-blur-xl">
+          <div
+            className="pd-reveal mt-10 rounded-2xl border border-white/15 bg-slate-900/35 p-6 backdrop-blur-xl"
+            style={{ animationDelay: "560ms" }}
+          >
             <h2 className="text-sm uppercase tracking-[0.22em] text-orange-200">Core Values</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               <article className="rounded-2xl border border-cyan-300/25 bg-slate-900/55 p-5 shadow-[0_0_30px_rgba(56,189,248,0.15)]">
@@ -96,7 +116,10 @@ export default function AboutPage() {
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl">
+            <div
+              className="pd-reveal rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl"
+              style={{ animationDelay: "700ms" }}
+            >
               <div className="relative h-56 overflow-hidden rounded-xl border border-orange-300/30 shadow-[0_0_35px_rgba(249,115,22,0.2)]">
                 <Image
                   src="https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1400&q=80"
@@ -107,7 +130,10 @@ export default function AboutPage() {
                 />
               </div>
             </div>
-            <div className="rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl">
+            <div
+              className="pd-reveal rounded-2xl border border-white/15 bg-slate-900/35 p-3 backdrop-blur-xl"
+              style={{ animationDelay: "790ms" }}
+            >
               <div className="relative h-56 overflow-hidden rounded-xl border border-blue-300/30 shadow-[0_0_35px_rgba(59,130,246,0.2)]">
                 <Image
                   src="https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&w=1400&q=80"
@@ -120,7 +146,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div className="pd-reveal mt-10 flex flex-wrap gap-3" style={{ animationDelay: "920ms" }}>
             <Link
               href="/products"
               className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(79,70,229,0.4)] transition-all hover:scale-[1.02] hover:from-blue-400 hover:to-purple-500"
