@@ -1,6 +1,7 @@
 export const ADMIN_COOKIE_NAME = "pera_admin_token";
 
-export const ADMIN_SESSION_MAX_AGE_SECONDS = 5 * 60;
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 300;
+const ADMIN_TOKEN_VERSION = 2;
 
 const SESSION_DURATION_MS = ADMIN_SESSION_MAX_AGE_SECONDS * 1000;
 const ENCRYPTION_ALGO = "AES-GCM";
@@ -49,6 +50,7 @@ export async function createAdminToken() {
   const key = await getAdminAesKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const payload = {
+    v: ADMIN_TOKEN_VERSION,
     exp: Date.now() + SESSION_DURATION_MS,
   };
 
@@ -80,9 +82,9 @@ export async function isAdminTokenValid(token: string) {
     );
 
     const json = bytesToUtf8(new Uint8Array(decrypted));
-    const payload = JSON.parse(json) as { exp?: number };
+    const payload = JSON.parse(json) as { exp?: number; v?: number };
 
-    return typeof payload.exp === "number" && payload.exp > Date.now();
+    return payload.v === ADMIN_TOKEN_VERSION && typeof payload.exp === "number" && payload.exp > Date.now();
   } catch {
     return false;
   }
