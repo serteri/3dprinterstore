@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { UTApi } from "uploadthing/server";
 
+import { sendTransactionalEmail } from "@/lib/mailer";
 import { requireAdminSession } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
 
@@ -416,36 +416,23 @@ export async function fulfillOrder(orderId: string, trackingNumber: string, carr
     },
   });
 
-  const mailerSendApiKey = process.env.MAILSENDER_API_KEY;
-  if (!mailerSendApiKey) {
-    throw new Error("MAILSENDER_API_KEY is missing.");
-  }
-
-  const senderEmail = process.env.MAILSENDER_FROM_EMAIL || "onboarding@mailer.peradynamics.com";
-  const senderName = process.env.MAILSENDER_FROM_NAME || "Pera Dynamics";
   const trackingLink = getTrackingLink(normalizedCarrier, normalizedTracking);
 
-  const mailerSend = new MailerSend({
-    apiKey: mailerSendApiKey,
-  });
-
-  const sentFrom = new Sender(senderEmail, senderName);
-  const recipients = [new Recipient(order.customerEmail, order.customerName)];
-
-  const emailParams = new EmailParams()
-    .setFrom(sentFrom)
-    .setTo(recipients)
-    .setSubject("Your Pera Dynamics order is on the way")
-    .setHtml(
-      buildShippedEmailHtml({
+  await sendTransactionalEmail(
+    {
+      tag: "order-shipped",
+      toEmail: order.customerEmail,
+      toName: order.customerName,
+      subject: "Your Pera Dynamics order is on the way",
+      html: buildShippedEmailHtml({
         customerName: order.customerName,
         trackingNumber: normalizedTracking,
         trackingLink,
       }),
-    )
-    .setText(`Hi ${order.customerName}, your Pera Dynamics order is on the way! Tracking: ${normalizedTracking}. Track here: ${trackingLink}`);
-
-  await mailerSend.email.send(emailParams);
+      text: `Hi ${order.customerName}, your Pera Dynamics order is on the way! Tracking: ${normalizedTracking}. Track here: ${trackingLink}`,
+    },
+    { throwOnError: false },
+  );
 
   revalidatePath("/admin/orders");
 }
