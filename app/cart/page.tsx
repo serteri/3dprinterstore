@@ -11,8 +11,12 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+const FREE_SHIPPING_THRESHOLD_AUD = 100;
+
 export default function CartPage() {
   const { items, itemCount, subtotal, removeItem, setQuantity, clearCart } = useCart();
+  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_AUD - subtotal);
+  const qualifiesForFreeShipping = remainingForFreeShipping === 0;
 
   return (
     <section className="min-h-screen bg-zinc-950 px-4 py-12">
@@ -92,6 +96,11 @@ export default function CartPage() {
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+              <p className="mt-3 rounded-lg border border-amber-700/60 bg-amber-950/25 px-3 py-2 text-sm text-amber-200">
+                {qualifiesForFreeShipping
+                  ? "Your order qualifies for FREE Standard Shipping!"
+                  : `Add ${formatCurrency(remainingForFreeShipping)} more to get Free Shipping!`}
+              </p>
               <p className="mt-4 text-xs text-zinc-500">Shipping and taxes are calculated at checkout.</p>
               <Link
                 href="/products"
