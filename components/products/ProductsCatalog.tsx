@@ -16,77 +16,104 @@ type ProductForCatalog = {
 
 type ProductsCatalogProps = {
   products: ProductForCatalog[];
+  categoryCounts: Record<string, number>;
 };
 
-const categoryFilters = [
-  "All",
-  "Home Decor",
-  "Tech Accessories",
-  "Engineering Parts",
+const TAXONOMY = [
+  "Architectural & Design",
+  "Tech & Workspace",
+  "Outdoor & Adventure",
+  "Toys & Pop Culture",
+  "Functional Engineering",
+  "Bespoke / Custom",
 ] as const;
 
-type CategoryFilter = (typeof categoryFilters)[number];
+type TaxonomyCategory = (typeof TAXONOMY)[number];
+type SelectedCategory = "All" | TaxonomyCategory;
 type SortOption = "newest" | "price-asc";
 
-function normalizeCategoryName(rawCategory: string): Exclude<CategoryFilter, "All"> {
-  const normalized = rawCategory.trim().toLowerCase();
-
-  if (normalized === "home decor") {
-    return "Home Decor";
-  }
-
-  if (normalized === "tech accessories") {
-    return "Tech Accessories";
-  }
-
-  return "Engineering Parts";
-}
-
-export default function ProductsCatalog({ products }: ProductsCatalogProps) {
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
+export default function ProductsCatalog({ products, categoryCounts }: ProductsCatalogProps) {
+  const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>("All");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const visibleProducts = useMemo(() => {
-    const filtered = products.filter((product) => {
-      if (selectedCategory === "All") {
-        return true;
-      }
+    const filtered =
+      selectedCategory === "All"
+        ? products
+        : products.filter((p) => p.categoryName === selectedCategory);
 
-      return normalizeCategoryName(product.categoryName) === selectedCategory;
-    });
-
-    return filtered.sort((a, b) => {
-      if (sortBy === "price-asc") {
-        return a.price - b.price;
-      }
-
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "price-asc") return a.price - b.price;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [products, selectedCategory, sortBy]);
 
+  const totalCount =
+    selectedCategory === "All"
+      ? products.length
+      : (categoryCounts[selectedCategory] ?? 0);
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+    <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+      {/* Sidebar */}
       <aside className="h-fit rounded-2xl border border-zinc-800/90 bg-zinc-900/50 p-5">
         <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">Refine Collection</p>
 
         <div className="mt-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-zinc-300">Categories</h2>
-          <div className="mt-3 space-y-2">
-            {categoryFilters.map((category) => {
-              const active = selectedCategory === category;
+          <div className="mt-3 space-y-1.5">
+            {/* All */}
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("All")}
+              className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                selectedCategory === "All"
+                  ? "border-zinc-400 bg-zinc-950 text-zinc-100"
+                  : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+              }`}
+            >
+              <span>All Products</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  selectedCategory === "All"
+                    ? "bg-zinc-700 text-zinc-200"
+                    : "bg-zinc-800 text-zinc-500"
+                }`}
+              >
+                {products.length}
+              </span>
+            </button>
+
+            {TAXONOMY.map((cat) => {
+              const count = categoryCounts[cat] ?? 0;
+              const active = selectedCategory === cat;
+              const isEmpty = count === 0;
 
               return (
                 <button
-                  key={category}
+                  key={cat}
                   type="button"
-                  onClick={() => setSelectedCategory(category)}
-                  className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                     active
                       ? "border-zinc-400 bg-zinc-950 text-zinc-100"
                       : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
                   }`}
                 >
-                  {category}
+                  <span>{cat}</span>
+                  {isEmpty ? (
+                    <span className="rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-600">
+                      Soon
+                    </span>
+                  ) : (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        active ? "bg-zinc-700 text-zinc-200" : "bg-zinc-800 text-zinc-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -95,37 +122,36 @@ export default function ProductsCatalog({ products }: ProductsCatalogProps) {
 
         <div className="mt-6 border-t border-zinc-800 pt-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-zinc-300">Sort by</h2>
-          <div className="mt-3 space-y-2">
-            <button
-              type="button"
-              onClick={() => setSortBy("price-asc")}
-              className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                sortBy === "price-asc"
-                  ? "border-zinc-400 bg-zinc-950 text-zinc-100"
-                  : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
-              }`}
-            >
-              Price (Low to High)
-            </button>
-            <button
-              type="button"
-              onClick={() => setSortBy("newest")}
-              className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                sortBy === "newest"
-                  ? "border-zinc-400 bg-zinc-950 text-zinc-100"
-                  : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
-              }`}
-            >
-              Newest
-            </button>
+          <div className="mt-3 space-y-1.5">
+            {(
+              [
+                { value: "newest", label: "Newest" },
+                { value: "price-asc", label: "Price: Low to High" },
+              ] as { value: SortOption; label: string }[]
+            ).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSortBy(value)}
+                className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                  sortBy === value
+                    ? "border-zinc-400 bg-zinc-950 text-zinc-100"
+                    : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </aside>
 
+      {/* Main content */}
       <div>
-        <div className="mb-4 flex items-center justify-between rounded-2xl border border-zinc-800/90 bg-zinc-900/40 px-4 py-3">
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-zinc-800/90 bg-zinc-900/40 px-4 py-3">
           <p className="text-sm text-zinc-400">
-            Showing <span className="font-medium text-zinc-100">{visibleProducts.length}</span> product(s)
+            <span className="font-medium text-zinc-100">{totalCount}</span>{" "}
+            {totalCount === 1 ? "product" : "products"}
           </p>
           <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
             {selectedCategory === "All" ? "All Categories" : selectedCategory}
@@ -133,10 +159,15 @@ export default function ProductsCatalog({ products }: ProductsCatalogProps) {
         </div>
 
         {visibleProducts.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-6 py-14 text-center">
-            <h2 className="text-2xl font-semibold text-white">No products for this filter yet</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-zinc-400">
-              Try another category or sort option. New premium drops are added regularly.
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-6 py-20 text-center">
+            <p className="text-xs uppercase tracking-[0.24em] text-zinc-600">Coming Soon</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Nothing here yet</h2>
+            <p className="mx-auto mt-3 max-w-md text-zinc-400">
+              We&apos;re building something for this category. Check back soon or{" "}
+              <a href="/custom" className="text-zinc-200 underline underline-offset-2 hover:text-white">
+                request a custom piece
+              </a>
+              .
             </p>
           </div>
         ) : (
