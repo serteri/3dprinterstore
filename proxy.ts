@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { ADMIN_COOKIE_NAME, isAdminTokenValid } from "@/lib/admin-auth";
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
+  createAdminToken,
+  isAdminTokenValid,
+} from "@/lib/admin-auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -15,7 +20,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Sliding session window: valid activity refreshes expiry, idle >5 minutes expires.
+  response.cookies.set({
+    name: ADMIN_COOKIE_NAME,
+    value: await createAdminToken(),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+    path: "/",
+  });
+
+  return response;
 }
 
 export const config = {

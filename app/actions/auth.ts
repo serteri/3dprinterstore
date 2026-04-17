@@ -5,7 +5,7 @@ import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { ADMIN_COOKIE_NAME, createAdminToken } from "@/lib/admin-auth";
+import { ADMIN_COOKIE_NAME, ADMIN_SESSION_MAX_AGE_SECONDS, createAdminToken } from "@/lib/admin-auth";
 
 export type AdminLoginState = {
   error: string | null;
@@ -55,7 +55,7 @@ export async function loginAdmin(
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 24 * 60 * 60,
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
     path: "/",
   });
 
