@@ -45,12 +45,3 @@ body {
   background-color: rgba(34, 211, 238, 0.25);
   color: #fafafa;
 }
-
-/* ── Hamburger: FORCE hide on desktop regardless of any class conflicts ── */
-@media (min-width: 768px) {
-  [data-hamburger] {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-}
