@@ -25,6 +25,10 @@ const TAXONOMY = [
   "Outdoor & Adventure",
   "Toys & Pop Culture",
   "Functional Engineering",
+  "Art & Sculptures",
+  "Home Hardware",
+  "Education & Science",
+  "Prototyping Services",
   "Bespoke / Custom",
 ] as const;
 
@@ -87,7 +91,6 @@ export default function ProductsCatalog({ products, categoryCounts }: ProductsCa
             {TAXONOMY.map((cat) => {
               const count = categoryCounts[cat] ?? 0;
               const active = selectedCategory === cat;
-              const isEmpty = count === 0;
 
               return (
                 <button
@@ -101,19 +104,13 @@ export default function ProductsCatalog({ products, categoryCounts }: ProductsCa
                   }`}
                 >
                   <span>{cat}</span>
-                  {isEmpty ? (
-                    <span className="rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-600">
-                      Soon
-                    </span>
-                  ) : (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        active ? "bg-zinc-700 text-zinc-200" : "bg-zinc-800 text-zinc-500"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  )}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      active ? "bg-zinc-700 text-zinc-200" : "bg-zinc-800 text-zinc-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -160,15 +157,17 @@ export default function ProductsCatalog({ products, categoryCounts }: ProductsCa
 
         {visibleProducts.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-6 py-20 text-center">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-600">Coming Soon</p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Nothing here yet</h2>
-            <p className="mx-auto mt-3 max-w-md text-zinc-400">
-              We&apos;re building something for this category. Check back soon or{" "}
-              <a href="/custom" className="text-zinc-200 underline underline-offset-2 hover:text-white">
-                request a custom piece
-              </a>
-              .
+            <p className="text-xs uppercase tracking-[0.24em] text-zinc-600">Empty Category</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">No products yet</h2>
+            <p className="mx-auto mt-4 max-w-md text-zinc-400">
+              Looking for something specific in this category? We can design and print it for you.
             </p>
+            <a
+              href="/custom"
+              className="mt-6 inline-block rounded-lg border border-zinc-600 px-6 py-2 text-sm font-medium text-zinc-200 transition-colors hover:border-zinc-400 hover:bg-zinc-900/80 hover:text-white"
+            >
+              Explore Custom Projects
+            </a>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
