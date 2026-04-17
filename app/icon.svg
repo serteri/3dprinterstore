@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Pera Dynamics">
+  <rect width="128" height="128" rx="24" fill="#0a0a0a" />
+  <rect x="18" y="18" width="92" height="92" rx="16" fill="none" stroke="#2f2f2f" stroke-width="2" />
+  <path d="M34 30h36c15.5 0 26 10 26 24.5C96 70 85.5 80 70 80H48v18H34V30Zm14 37h20c8 0 13.5-4.5 13.5-12.5C81.5 46 76 41 68 41H48v26Z" fill="#f4f4f5" />
+  <circle cx="94" cy="94" r="4" fill="#9ca3af" />
+</svg>

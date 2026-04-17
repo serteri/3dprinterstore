@@ -21,8 +21,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PRINT3D — Custom 3D Printed Products",
-  description: "Order bespoke, high-quality 3D printed products crafted to your exact specifications.",
+  title: {
+    default: "Pera Dynamics | Precision 3D Engineered Art",
+    template: "%s | Pera Dynamics",
+  },
+  description:
+    "Pera Dynamics builds bespoke additive manufacturing products with precision engineering, minimalist craftsmanship, and industrial-grade materials.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default async function RootLayout({
