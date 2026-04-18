@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { ExternalLink, Loader2, Save } from "lucide-react";
 
 import { updateCustomInquiryStatus } from "@/app/actions/admin";
@@ -31,6 +31,7 @@ type CustomInquiriesDashboardProps = {
 const STATUS_OPTIONS = ["NEW", "IN_REVIEW", "QUOTED", "CLOSED"] as const;
 
 type StatusOption = (typeof STATUS_OPTIONS)[number];
+type StatusFilter = StatusOption | "ALL";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -48,6 +49,8 @@ function statusBadgeClass(status: StatusOption) {
 
 export default function CustomInquiriesDashboard({ initialInquiries }: CustomInquiriesDashboardProps) {
   const [inquiries, setInquiries] = useState(initialInquiries);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [activeInquiryId, setActiveInquiryId] = useState<string | null>(
     initialInquiries[0]?.id ?? null,
   );
@@ -63,6 +66,32 @@ export default function CustomInquiriesDashboard({ initialInquiries }: CustomInq
     () => inquiries.find((item) => item.id === activeInquiryId) ?? null,
     [inquiries, activeInquiryId],
   );
+
+  const filteredInquiries = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return inquiries.filter((item) => {
+      const statusMatches = statusFilter === "ALL" || item.status === statusFilter;
+      if (!statusMatches) return false;
+
+      if (!query) return true;
+
+      const haystack = `${item.name} ${item.email} ${item.projectType}`.toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [inquiries, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filteredInquiries.length === 0) {
+      setActiveInquiryId(null);
+      return;
+    }
+
+    const stillVisible = filteredInquiries.some((item) => item.id === activeInquiryId);
+    if (!stillVisible) {
+      openInquiry(filteredInquiries[0].id);
+    }
+  }, [filteredInquiries, activeInquiryId]);
 
   function openInquiry(inquiryId: string) {
     const selected = inquiries.find((item) => item.id === inquiryId);
@@ -131,14 +160,34 @@ export default function CustomInquiriesDashboard({ initialInquiries }: CustomInq
 
         <div className="grid gap-5 lg:grid-cols-[330px_1fr]">
           <aside className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/80">
-            <div className="border-b border-zinc-800 px-4 py-3">
+            <div className="space-y-3 border-b border-zinc-800 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Saved Inquiries</p>
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by name, email, project..."
+                className="h-10 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-200 outline-none focus:border-[#0EA5B7]"
+              />
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                className="h-10 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-200 outline-none focus:border-[#0EA5B7]"
+              >
+                <option value="ALL">All statuses</option>
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="max-h-[68vh] overflow-y-auto">
-              {inquiries.length === 0 ? (
-                <p className="px-4 py-8 text-sm text-zinc-500">No custom inquiries yet.</p>
+              {filteredInquiries.length === 0 ? (
+                <p className="px-4 py-8 text-sm text-zinc-500">
+                  {inquiries.length === 0 ? "No custom inquiries yet." : "No inquiries match your filters."}
+                </p>
               ) : (
-                inquiries.map((inquiry) => {
+                filteredInquiries.map((inquiry) => {
                   const active = inquiry.id === activeInquiryId;
 
                   return (
