@@ -21,7 +21,7 @@ export default async function ProductsPage() {
   }
 
   return (
-    <section className="min-h-screen bg-zinc-950 py-16">
+    <section className="min-h-screen bg-zinc-950 pb-16 pt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Pera Dynamics</p>
