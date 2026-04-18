@@ -1,5 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
+import { prisma } from "@/lib/prisma";
 import { sendTransactionalEmail } from "@/lib/mailer";
 
 export type CustomInquiryState = {
@@ -65,6 +68,23 @@ export async function submitCustomInquiry(
 
   const referenceImages = parseReferenceImages(referenceImagesRaw);
   const adminEmail = process.env.ADMIN_EMAIL || "info@peradynamics.com";
+
+  await prisma.customInquiry.create({
+    data: {
+      name,
+      email,
+      phone: phone || null,
+      projectType,
+      material: material || null,
+      quantity: quantity || null,
+      budget: budget || null,
+      timeline: timeline || null,
+      details,
+      referenceImages,
+    },
+  });
+
+  revalidatePath("/admin/custom");
 
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
@@ -173,7 +193,7 @@ export async function submitCustomInquiry(
 
     return {
       error: null,
-      success: "Thanks, your project brief has been sent. We will contact you shortly.",
+      success: "Thanks, your project brief has been saved and sent. We will contact you shortly.",
     };
   } catch {
     return {

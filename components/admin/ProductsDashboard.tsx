@@ -398,6 +398,13 @@ export default function ProductsDashboard({
                 Orders
               </Link>
 
+              <Link
+                href="/admin/custom"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-sm font-semibold text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Custom Requests
+              </Link>
+
               <form action={logoutAdmin}>
                 <button
                   type="submit"

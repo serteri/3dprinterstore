@@ -134,12 +134,20 @@ export default function OrdersDashboard({ initialOrders }: OrdersDashboardProps)
           <h1 className="mt-2 text-3xl font-semibold text-zinc-100">Order Management</h1>
           <p className="mt-2 text-sm text-zinc-400">Monitor successful payments and dispatch shipments with tracking notifications.</p>
           <div className="mt-4">
-            <Link
-              href="/admin/products"
-              className="inline-flex items-center rounded-full border border-zinc-700 px-4 py-2 text-xs uppercase tracking-[0.16em] text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-900"
-            >
-              Back to Products
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/admin/products"
+                className="inline-flex items-center rounded-full border border-zinc-700 px-4 py-2 text-xs uppercase tracking-[0.16em] text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-900"
+              >
+                Back to Products
+              </Link>
+              <Link
+                href="/admin/custom"
+                className="inline-flex items-center rounded-full border border-zinc-700 px-4 py-2 text-xs uppercase tracking-[0.16em] text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-900"
+              >
+                Custom Requests
+              </Link>
+            </div>
           </div>
         </header>
 

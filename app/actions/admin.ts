@@ -436,3 +436,52 @@ export async function fulfillOrder(orderId: string, trackingNumber: string, carr
 
   revalidatePath("/admin/orders");
 }
+
+export async function getCustomInquiries() {
+  await requireAdminSession();
+
+  const inquiries = await prisma.customInquiry.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return inquiries.map((inquiry) => ({
+    ...inquiry,
+    createdAt: inquiry.createdAt.toISOString(),
+    updatedAt: inquiry.updatedAt.toISOString(),
+  }));
+}
+
+export async function updateCustomInquiryStatus(
+  inquiryId: string,
+  status: "NEW" | "IN_REVIEW" | "QUOTED" | "CLOSED",
+  adminNotes?: string,
+) {
+  await requireAdminSession();
+
+  if (!inquiryId) {
+    throw new Error("Inquiry id is required.");
+  }
+
+  const updated = await prisma.customInquiry.update({
+    where: { id: inquiryId },
+    data: {
+      status,
+      adminNotes: (adminNotes ?? "").trim() || null,
+    },
+    select: {
+      id: true,
+      status: true,
+      adminNotes: true,
+      updatedAt: true,
+    },
+  });
+
+  revalidatePath("/admin/custom");
+
+  return {
+    ...updated,
+    updatedAt: updated.updatedAt.toISOString(),
+  };
+}
