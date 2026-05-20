@@ -1,4 +1,4 @@
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeonHTTP } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
@@ -11,7 +11,7 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set.");
 }
 
-const adapter = new PrismaPg({ connectionString });
+const adapter = new PrismaNeonHTTP({ connectionString });
 
 export const prisma =
   globalForPrisma.prisma ??

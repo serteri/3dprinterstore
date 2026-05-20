@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 
+import { CACHE_TAGS } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
 import { sendTransactionalEmail } from "@/lib/mailer";
 
@@ -84,7 +85,7 @@ export async function submitCustomInquiry(
     },
   });
 
-  revalidatePath("/admin/custom");
+  revalidateTag(CACHE_TAGS.customInquiries);
 
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);

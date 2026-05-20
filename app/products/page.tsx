@@ -1,24 +1,8 @@
 import ProductsCatalog from "@/components/products/ProductsCatalog";
-import { prisma } from "@/lib/prisma";
-
-export const revalidate = 60;
+import { getProductsCatalogData } from "@/lib/storefront-data";
 
 export default async function ProductsPage() {
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({
-      include: { category: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.category.findMany({
-      include: { _count: { select: { products: true } } },
-      orderBy: { name: "asc" },
-    }),
-  ]);
-
-  const categoryCounts: Record<string, number> = {};
-  for (const cat of categories) {
-    categoryCounts[cat.name] = cat._count.products;
-  }
+  const { products, categoryCounts } = await getProductsCatalogData();
 
   return (
     <section className="min-h-screen bg-zinc-950 pb-16 pt-24">
@@ -36,10 +20,10 @@ export default async function ProductsPage() {
             id: product.id,
             title: product.title,
             description: product.description,
-            price: Number(product.price),
+            price: product.price,
             images: product.images,
-            createdAt: product.createdAt.toISOString(),
-            categoryName: product.category.name,
+            createdAt: product.createdAt,
+            categoryName: product.categoryName,
           }))}
           categoryCounts={categoryCounts}
         />

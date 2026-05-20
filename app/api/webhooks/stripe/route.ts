@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { sendTransactionalEmail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
@@ -208,12 +208,14 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!secretKey || !webhookSecret) {
-    return NextResponse.json({ error: "Stripe webhook is not configured." }, { status: 500 });
+    console.error("Stripe webhook configuration is missing. Event ignored.");
+    return NextResponse.json({ received: true, ignored: "missing-config" });
   }
 
   const signature = req.headers.get("stripe-signature");
   if (!signature) {
-    return NextResponse.json({ error: "Missing stripe-signature header." }, { status: 400 });
+    console.warn("Missing stripe-signature header. Event ignored.");
+    return NextResponse.json({ received: true, ignored: "missing-signature" });
   }
 
   const payload = await req.text();
@@ -225,12 +227,19 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid webhook signature.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.warn("Invalid webhook signature. Event ignored.", message);
+    return NextResponse.json({ received: true, ignored: "invalid-signature" });
   }
 
-  if (event.type === "checkout.session.completed") {
-    await handleCheckoutCompleted(event as Stripe.CheckoutSessionCompletedEvent);
-  }
+  after(async () => {
+    try {
+      if (event.type === "checkout.session.completed") {
+        await handleCheckoutCompleted(event as Stripe.CheckoutSessionCompletedEvent);
+      }
+    } catch (error) {
+      console.error("Stripe webhook processing failed after ACK.", error);
+    }
+  });
 
   return NextResponse.json({ received: true });
 }

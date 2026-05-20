@@ -8,7 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { prisma } from "@/lib/prisma";
+import { getFeaturedProducts } from "@/lib/storefront-data";
 import ProductCard from "@/components/ui/ProductCard";
 
 const features = [
@@ -33,12 +33,7 @@ const features = [
 ];
 
 export default async function HomePage() {
-  const featuredProducts = await prisma.product.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 4,
-  });
+  const featuredProducts = await getFeaturedProducts();
 
   return (
     <>
@@ -166,7 +161,7 @@ export default async function HomePage() {
                     id: product.id,
                     title: product.title,
                     description: product.description,
-                    price: Number(product.price),
+                    price: product.price,
                     images: product.images,
                     createdAt: product.createdAt,
                   }}

@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { UTApi } from "uploadthing/server";
 
+import { CACHE_TAGS, productTag } from "@/lib/cache-tags";
 import { sendTransactionalEmail } from "@/lib/mailer";
 import { requireAdminSession } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
@@ -158,6 +159,15 @@ function validateProductPayload(payload: ProductPayload) {
   };
 }
 
+function revalidateStorefrontProductData(productId?: string) {
+  revalidateTag(CACHE_TAGS.products);
+  revalidateTag(CACHE_TAGS.categories);
+
+  if (productId) {
+    revalidateTag(productTag(productId));
+  }
+}
+
 export async function createCategory(name: string) {
   await requireAdminSession();
 
@@ -172,7 +182,7 @@ export async function createCategory(name: string) {
     select: { id: true, name: true },
   });
 
-  revalidatePath("/admin/products");
+  revalidateStorefrontProductData();
   return category;
 }
 
@@ -212,9 +222,7 @@ export async function createProduct(payload: ProductPayload) {
     },
   });
 
-  revalidatePath("/admin/products");
-  revalidatePath("/");
-  revalidatePath("/products");
+  revalidateStorefrontProductData(product.id);
   return {
     ...product,
     price: Number(product.price),
@@ -266,9 +274,7 @@ export async function updateProduct(productId: string, payload: ProductPayload) 
     await deleteUploadThingFiles(removedImages);
   }
 
-  revalidatePath("/admin/products");
-  revalidatePath("/");
-  revalidatePath("/products");
+  revalidateStorefrontProductData(product.id);
   return {
     ...product,
     price: Number(product.price),
@@ -300,9 +306,7 @@ export async function deleteProduct(productId: string) {
     await deleteUploadThingFiles(existing.images);
   }
 
-  revalidatePath("/admin/products");
-  revalidatePath("/");
-  revalidatePath("/products");
+  revalidateStorefrontProductData(productId);
 }
 
 export async function updateProductInventory(productId: string, inventory: number) {
@@ -321,10 +325,7 @@ export async function updateProductInventory(productId: string, inventory: numbe
     data: { inventory },
   });
 
-  revalidatePath("/admin/products");
-  revalidatePath("/");
-  revalidatePath("/products");
-  revalidatePath(`/products/${productId}`);
+  revalidateStorefrontProductData(productId);
 }
 
 export async function getProducts(categoryId?: string) {
@@ -434,7 +435,7 @@ export async function fulfillOrder(orderId: string, trackingNumber: string, carr
     { throwOnError: false },
   );
 
-  revalidatePath("/admin/orders");
+  revalidateTag(CACHE_TAGS.orders);
 }
 
 export async function getCustomInquiries() {
@@ -478,7 +479,7 @@ export async function updateCustomInquiryStatus(
     },
   });
 
-  revalidatePath("/admin/custom");
+  revalidateTag(CACHE_TAGS.customInquiries);
 
   return {
     ...updated,

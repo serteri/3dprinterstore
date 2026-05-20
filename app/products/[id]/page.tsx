@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { createStripeCheckoutSession } from "@/app/actions/stripe";
 import ProductPurchasePanel from "@/components/products/ProductPurchasePanel";
-import { prisma } from "@/lib/prisma";
+import { getProductDetailById } from "@/lib/storefront-data";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -14,16 +14,7 @@ type ProductDetailPageProps = {
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = await params;
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
+  const product = await getProductDetailById(id);
 
   if (!product) {
     notFound();
@@ -63,7 +54,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           </div>
 
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">{product.category.name}</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">{product.categoryName}</p>
             <h1 className="mt-3 text-3xl font-bold text-white">{product.title}</h1>
             <p className="mt-4 text-zinc-300">{product.description}</p>
 
