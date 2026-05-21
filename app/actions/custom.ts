@@ -2,7 +2,7 @@
 
 import { revalidateTag } from "next/cache";
 
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { CACHE_TAGS, CACHE_TAG_PROFILE } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
 import { sendTransactionalEmail } from "@/lib/mailer";
 
@@ -85,7 +85,7 @@ export async function submitCustomInquiry(
     },
   });
 
-  revalidateTag(CACHE_TAGS.customInquiries);
+  revalidateTag(CACHE_TAGS.customInquiries, CACHE_TAG_PROFILE);
 
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);

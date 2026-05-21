@@ -3,7 +3,7 @@
 import { revalidateTag } from "next/cache";
 import { UTApi } from "uploadthing/server";
 
-import { CACHE_TAGS, productTag } from "@/lib/cache-tags";
+import { CACHE_TAGS, CACHE_TAG_PROFILE, productTag } from "@/lib/cache-tags";
 import { sendTransactionalEmail } from "@/lib/mailer";
 import { requireAdminSession } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
@@ -160,11 +160,11 @@ function validateProductPayload(payload: ProductPayload) {
 }
 
 function revalidateStorefrontProductData(productId?: string) {
-  revalidateTag(CACHE_TAGS.products);
-  revalidateTag(CACHE_TAGS.categories);
+  revalidateTag(CACHE_TAGS.products, CACHE_TAG_PROFILE);
+  revalidateTag(CACHE_TAGS.categories, CACHE_TAG_PROFILE);
 
   if (productId) {
-    revalidateTag(productTag(productId));
+    revalidateTag(productTag(productId), CACHE_TAG_PROFILE);
   }
 }
 
@@ -435,7 +435,7 @@ export async function fulfillOrder(orderId: string, trackingNumber: string, carr
     { throwOnError: false },
   );
 
-  revalidateTag(CACHE_TAGS.orders);
+  revalidateTag(CACHE_TAGS.orders, CACHE_TAG_PROFILE);
 }
 
 export async function getCustomInquiries() {
@@ -479,7 +479,7 @@ export async function updateCustomInquiryStatus(
     },
   });
 
-  revalidateTag(CACHE_TAGS.customInquiries);
+  revalidateTag(CACHE_TAGS.customInquiries, CACHE_TAG_PROFILE);
 
   return {
     ...updated,
